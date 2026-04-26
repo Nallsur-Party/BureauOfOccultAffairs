@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform visualRoot;
 
     private Rigidbody rb;
+    private SpriteRenderer spriteRenderer;
     private float moveInput;
     private float depthInput;
     private bool jumpPressed;
@@ -26,6 +27,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         rb.constraints = RigidbodyConstraints.FreezeRotation;
     }
 
@@ -87,20 +89,32 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateFacing()
     {
-        Transform target = visualRoot != null ? visualRoot : transform;
-
         if (moveInput > 0.01f)
         {
-            Vector3 scale = target.localScale;
-            scale.x = Mathf.Abs(scale.x);
-            target.localScale = scale;
+            SetFacingRight(true);
         }
         else if (moveInput < -0.01f)
         {
-            Vector3 scale = target.localScale;
-            scale.x = -Mathf.Abs(scale.x);
-            target.localScale = scale;
+            SetFacingRight(false);
         }
+    }
+
+    private void SetFacingRight(bool facingRight)
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.flipX = !facingRight;
+            return;
+        }
+
+        if (visualRoot == null)
+        {
+            return;
+        }
+
+        Vector3 scale = visualRoot.localScale;
+        scale.x = facingRight ? Mathf.Abs(scale.x) : -Mathf.Abs(scale.x);
+        visualRoot.localScale = scale;
     }
 
     private void OnDrawGizmosSelected()
