@@ -107,6 +107,21 @@ public class NpcOrderVisitor : MonoBehaviour
         );
     }
 
+    public string GetInteractionText()
+    {
+        if (npcData == null)
+        {
+            return "NPC data has not been generated yet.";
+        }
+
+        string problemText = npcData.HasProblem ? npcData.ProblemName : "Ничего странного не замечено";
+        string symptomsText = npcData.Symptoms.Count > 0
+            ? string.Join(", ", npcData.Symptoms)
+            : "Симптомов нет";
+
+        return $"{npcData.Name}, {npcData.Age}\nПроблема: {problemText}\nСимптомы: {symptomsText}";
+    }
+
     private void Update()
     {
         if (currentTarget == null)

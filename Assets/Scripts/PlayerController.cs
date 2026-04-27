@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
@@ -23,6 +24,10 @@ public class PlayerController : MonoBehaviour
     [Header("Interaction")]
     [SerializeField] private float interactionRadius = 1.5f;
     [SerializeField] private LayerMask interactionMask = ~0;
+    [SerializeField] private GameObject interactionPrompt;
+    [SerializeField] private GameObject dialogueWindow;
+    [SerializeField] private TMP_Text dialogueText;
+    [SerializeField] private float dialogueHideDelay = 2f;
 
     private Rigidbody rb;
     private Collider bodyCollider;
@@ -31,6 +36,8 @@ public class PlayerController : MonoBehaviour
     private float depthInput;
     private bool jumpPressed;
     private bool isGrounded;
+    private NpcOrderVisitor currentInteractableNpc;
+    private float dialogueHideTimer = -1f;
 
     private void Awake()
     {
@@ -40,25 +47,39 @@ public class PlayerController : MonoBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotation;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        SetInteractionPromptVisible(false);
+        SetDialogueVisible(false);
     }
 
     private void Update()
     {
         moveInput = Input.GetAxisRaw("Horizontal");
         depthInput = useDepthMovement ? Input.GetAxisRaw("Vertical") : 0f;
+        currentInteractableNpc = FindNearestInteractableNpc();
 
         if (Input.GetButtonDown("Jump"))
         {
             jumpPressed = true;
         }
 
-        if (Input.GetKeyDown(KeyCode.E))
+        if (Input.GetKeyDown(KeyCode.E) && currentInteractableNpc != null)
         {
-            TryInteract();
+            currentInteractableNpc.Interact();
+            ShowDialogue(currentInteractableNpc.GetInteractionText());
         }
 
         UpdateGroundedState();
         UpdateFacing();
+        SetInteractionPromptVisible(currentInteractableNpc != null);
+
+        if (currentInteractableNpc == null)
+        {
+            UpdateDialogueHideTimer();
+        }
+        else
+        {
+            dialogueHideTimer = -1f;
+        }
     }
 
     private void FixedUpdate()
@@ -163,7 +184,7 @@ public class PlayerController : MonoBehaviour
         visualRoot.localScale = scale;
     }
 
-    private void TryInteract()
+    private NpcOrderVisitor FindNearestInteractableNpc()
     {
         Collider[] nearbyColliders = Physics.OverlapSphere(
             transform.position,
@@ -195,10 +216,60 @@ public class PlayerController : MonoBehaviour
             nearestNpc = npc;
         }
 
-        if (nearestNpc != null)
+        return nearestNpc;
+    }
+
+    private void SetInteractionPromptVisible(bool isVisible)
+    {
+        if (interactionPrompt == null || interactionPrompt.activeSelf == isVisible)
         {
-            nearestNpc.Interact();
+            return;
         }
+
+        interactionPrompt.SetActive(isVisible);
+    }
+
+    private void ShowDialogue(string message)
+    {
+        if (dialogueText != null)
+        {
+            dialogueText.text = message;
+        }
+
+        dialogueHideTimer = -1f;
+        SetDialogueVisible(true);
+    }
+
+    private void UpdateDialogueHideTimer()
+    {
+        if (dialogueWindow == null || !dialogueWindow.activeSelf)
+        {
+            return;
+        }
+
+        if (dialogueHideTimer < 0f)
+        {
+            dialogueHideTimer = dialogueHideDelay;
+            return;
+        }
+
+        dialogueHideTimer -= Time.deltaTime;
+
+        if (dialogueHideTimer <= 0f)
+        {
+            dialogueHideTimer = -1f;
+            SetDialogueVisible(false);
+        }
+    }
+
+    private void SetDialogueVisible(bool isVisible)
+    {
+        if (dialogueWindow == null || dialogueWindow.activeSelf == isVisible)
+        {
+            return;
+        }
+
+        dialogueWindow.SetActive(isVisible);
     }
 
     private void OnDrawGizmosSelected()
