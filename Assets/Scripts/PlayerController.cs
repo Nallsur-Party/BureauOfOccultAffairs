@@ -7,6 +7,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float jumpForce = 7f;
     [SerializeField] private bool useDepthMovement = false;
+    [SerializeField] private float groundAcceleration = 35f;
+    [SerializeField] private float airAcceleration = 20f;
+    [SerializeField] private float wallCheckDistance = 0.15f;
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
@@ -18,6 +21,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform visualRoot;
 
     private Rigidbody rb;
+    private Collider bodyCollider;
     private SpriteRenderer spriteRenderer;
     private float moveInput;
     private float depthInput;
@@ -27,8 +31,11 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        bodyCollider = GetComponent<Collider>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         rb.constraints = RigidbodyConstraints.FreezeRotation;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
     }
 
     private void Update()
@@ -48,17 +55,22 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         Vector3 velocity = rb.velocity;
+        Vector3 targetPlanarVelocity = useDepthMovement
+            ? new Vector3(moveInput, 0f, depthInput) * moveSpeed
+            : new Vector3(moveInput * moveSpeed, 0f, 0f);
+        Vector3 currentPlanarVelocity = new Vector3(velocity.x, 0f, velocity.z);
+        float acceleration = isGrounded ? groundAcceleration : airAcceleration;
 
-        if (useDepthMovement)
-        {
-            velocity.x = moveInput * moveSpeed;
-            velocity.z = depthInput * moveSpeed;
-        }
-        else
-        {
-            velocity.x = moveInput * moveSpeed;
-            velocity.z = 0f;
-        }
+        currentPlanarVelocity = Vector3.MoveTowards(
+            currentPlanarVelocity,
+            targetPlanarVelocity,
+            acceleration * Time.fixedDeltaTime
+        );
+
+        currentPlanarVelocity = ResolveWallCollision(currentPlanarVelocity);
+
+        velocity.x = currentPlanarVelocity.x;
+        velocity.z = currentPlanarVelocity.z;
 
         if (jumpPressed && isGrounded)
         {
@@ -67,6 +79,31 @@ public class PlayerController : MonoBehaviour
 
         rb.velocity = velocity;
         jumpPressed = false;
+    }
+
+    private Vector3 ResolveWallCollision(Vector3 planarVelocity)
+    {
+        if (bodyCollider == null || planarVelocity.sqrMagnitude <= 0.0001f)
+        {
+            return planarVelocity;
+        }
+
+        Vector3 direction = planarVelocity.normalized;
+        float sweepDistance = wallCheckDistance + planarVelocity.magnitude * Time.fixedDeltaTime;
+
+        if (!rb.SweepTest(direction, out RaycastHit hit, sweepDistance, QueryTriggerInteraction.Ignore))
+        {
+            return planarVelocity;
+        }
+
+        Vector3 adjustedVelocity = Vector3.ProjectOnPlane(planarVelocity, hit.normal);
+
+        if (!useDepthMovement)
+        {
+            adjustedVelocity.z = 0f;
+        }
+
+        return adjustedVelocity;
     }
 
     private void UpdateGroundedState()
