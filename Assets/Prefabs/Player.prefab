@@ -194,3 +194,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   visualRoot: {fileID: 0}
+  interactionRadius: 1.5
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 64

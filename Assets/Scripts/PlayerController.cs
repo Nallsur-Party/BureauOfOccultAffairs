@@ -20,6 +20,10 @@ public class PlayerController : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private Transform visualRoot;
 
+    [Header("Interaction")]
+    [SerializeField] private float interactionRadius = 1.5f;
+    [SerializeField] private LayerMask interactionMask = ~0;
+
     private Rigidbody rb;
     private Collider bodyCollider;
     private SpriteRenderer spriteRenderer;
@@ -46,6 +50,11 @@ public class PlayerController : MonoBehaviour
         if (Input.GetButtonDown("Jump"))
         {
             jumpPressed = true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            TryInteract();
         }
 
         UpdateGroundedState();
@@ -154,6 +163,44 @@ public class PlayerController : MonoBehaviour
         visualRoot.localScale = scale;
     }
 
+    private void TryInteract()
+    {
+        Collider[] nearbyColliders = Physics.OverlapSphere(
+            transform.position,
+            interactionRadius,
+            interactionMask,
+            QueryTriggerInteraction.Collide
+        );
+
+        NpcOrderVisitor nearestNpc = null;
+        float nearestDistance = float.MaxValue;
+
+        for (int i = 0; i < nearbyColliders.Length; i++)
+        {
+            NpcOrderVisitor npc = nearbyColliders[i].GetComponentInParent<NpcOrderVisitor>();
+
+            if (npc == null)
+            {
+                continue;
+            }
+
+            float distance = (npc.transform.position - transform.position).sqrMagnitude;
+
+            if (distance >= nearestDistance)
+            {
+                continue;
+            }
+
+            nearestDistance = distance;
+            nearestNpc = npc;
+        }
+
+        if (nearestNpc != null)
+        {
+            nearestNpc.Interact();
+        }
+    }
+
     private void OnDrawGizmosSelected()
     {
         Vector3 checkPosition = groundCheck != null ? groundCheck.position : transform.position;
@@ -161,5 +208,8 @@ public class PlayerController : MonoBehaviour
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(checkPosition, groundCheckRadius);
         Gizmos.DrawLine(checkPosition, checkPosition + Vector3.down * groundCheckDistance);
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, interactionRadius);
     }
 }

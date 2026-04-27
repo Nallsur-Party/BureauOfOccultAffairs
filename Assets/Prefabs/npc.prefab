@@ -10,7 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2564011892817531565}
   - component: {fileID: 1110097491038967999}
-  m_Layer: 0
+  - component: {fileID: 3728247049770033207}
+  m_Layer: 6
   m_Name: npc
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -85,3 +86,42 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &3728247049770033207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3188153488741869461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1b8caa123d156f418a5a6306339fea9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startPoint: {fileID: 0}
+  counterPoint: {fileID: 0}
+  exitPoints:
+  - {fileID: 0}
+  - {fileID: 0}
+  snapToStartPointOnAwake: 1
+  beginRouteOnAwake: 1
+  moveSpeed: 2.5
+  stoppingDistance: 0.05
+  keepCurrentY: 1
+  spriteRenderer: {fileID: 0}
+  invertFlipX: 0
+  npcGenerator: {fileID: 0}
+  generateNpcDataOnAwake: 1
+  npcData:
+    npcName: 
+    gender: 0
+    age: 0
+    problemName: 
+    symptoms: []
+  renameGameObjectToNpcName: 1
+  onReachedCounter:
+    m_PersistentCalls:
+      m_Calls: []
+  onLeftScene:
+    m_PersistentCalls:
+      m_Calls: []

@@ -27,6 +27,12 @@ public class NpcOrderVisitor : MonoBehaviour
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private bool invertFlipX;
 
+    [Header("NPC Data")]
+    [SerializeField] private NPCGenerator npcGenerator;
+    [SerializeField] private bool generateNpcDataOnAwake = true;
+    [SerializeField] private NPC npcData;
+    [SerializeField] private bool renameGameObjectToNpcName = true;
+
     [Header("Events")]
     [SerializeField] private UnityEvent onReachedCounter;
     [SerializeField] private UnityEvent onLeftScene;
@@ -35,12 +41,23 @@ public class NpcOrderVisitor : MonoBehaviour
     private Transform currentTarget;
 
     public bool IsWaitingAtCounter => currentState == VisitorState.WaitingAtCounter;
+    public NPC NpcData => npcData;
 
     private void Awake()
     {
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (npcGenerator == null)
+        {
+            npcGenerator = FindObjectOfType<NPCGenerator>();
+        }
+
+        if (generateNpcDataOnAwake)
+        {
+            GenerateNpcData();
         }
 
         if (snapToStartPointOnAwake && startPoint != null)
@@ -52,6 +69,42 @@ public class NpcOrderVisitor : MonoBehaviour
         {
             SendToCounter();
         }
+    }
+
+    public void GenerateNpcData()
+    {
+        if (npcGenerator == null)
+        {
+            Debug.LogWarning($"{nameof(NpcOrderVisitor)} on {name} could not find {nameof(NPCGenerator)}.", this);
+            return;
+        }
+
+        npcGenerator.GenerateNpc();
+        npcData = npcGenerator.GeneratedNpc;
+
+        if (renameGameObjectToNpcName && npcData != null && !string.IsNullOrWhiteSpace(npcData.Name))
+        {
+            gameObject.name = $"NPC - {npcData.Name}";
+        }
+    }
+
+    public void Interact()
+    {
+        if (npcData == null)
+        {
+            Debug.Log($"NPC {name}: data has not been generated yet.", this);
+            return;
+        }
+
+        string symptomsText = npcData.Symptoms.Count > 0
+            ? string.Join(", ", npcData.Symptoms)
+            : "No symptoms";
+        string problemText = npcData.HasProblem ? npcData.ProblemName : "No problem";
+
+        Debug.Log(
+            $"NPC: {npcData.Name} | Gender: {npcData.Gender} | Age: {npcData.Age} | Problem: {problemText} | Symptoms: {symptomsText}",
+            this
+        );
     }
 
     private void Update()
