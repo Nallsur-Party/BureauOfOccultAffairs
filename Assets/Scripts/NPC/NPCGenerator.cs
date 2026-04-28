@@ -157,6 +157,18 @@ public class NPCGenerator : MonoBehaviour
         return NPCDialogueUtility.GetNextSymptomLine(npc, symptomLinesCatalog, traitFallbackCatalog);
     }
 
+    public string GetQuestionResponse(NPC npc, NPCQuestionType questionType, PlayerProfile playerProfile)
+    {
+        EnsureCatalogLoaded();
+        return NPCDialogueUtility.GetQuestionResponse(
+            npc,
+            questionType,
+            playerProfile,
+            symptomLinesCatalog,
+            traitFallbackCatalog
+        );
+    }
+
     private void EnsureCatalogLoaded()
     {
         if (problemCatalog == null)

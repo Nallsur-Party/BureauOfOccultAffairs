@@ -123,7 +123,22 @@ public class NpcOrderVisitor : MonoBehaviour
             dialogueLine = "Мне нечего сказать.";
         }
 
-        return $"{npcData.Name}, {npcData.Age}\n{dialogueLine}";
+        return dialogueLine;
+    }
+
+    public string GetQuestionResponse(NPCQuestionType questionType, PlayerProfile playerProfile)
+    {
+        if (npcData == null)
+        {
+            return "NPC data has not been generated yet.";
+        }
+
+        if (npcGenerator == null)
+        {
+            return "Говорить пока не о чем.";
+        }
+
+        return npcGenerator.GetQuestionResponse(npcData, questionType, playerProfile);
     }
 
     private void Update()

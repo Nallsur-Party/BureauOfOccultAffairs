@@ -20,7 +20,11 @@ public class NPC
     [SerializeField] private List<string> symptomIds = new List<string>();
     [SerializeField] private List<string> symptoms = new List<string>();
     [SerializeField] private int truthTokens;
+    [SerializeField] private int detectiveQuestionTokens;
     [SerializeField] private List<string> revealedSymptomIds = new List<string>();
+    [NonSerialized] private HashSet<NPCQuestionType> askedQuestionTypes = new HashSet<NPCQuestionType>();
+    [NonSerialized] private Dictionary<NPCQuestionType, string> rememberedAnswers = new Dictionary<NPCQuestionType, string>();
+    [NonSerialized] private string lastStoryLine;
 
     public string Name => npcName;
     public GenderType Gender => gender;
@@ -30,6 +34,7 @@ public class NPC
     public IReadOnlyList<string> SymptomIds => symptomIds;
     public IReadOnlyList<string> Symptoms => symptoms;
     public int RemainingTruthTokens => truthTokens;
+    public int RemainingDetectiveQuestionTokens => detectiveQuestionTokens;
     public bool HasProblem => !string.IsNullOrWhiteSpace(problemName);
 
     public NPC(string npcName, GenderType gender, int age, NPCTraitType trait)
@@ -82,6 +87,7 @@ public class NPC
         }
 
         truthTokens = NPCDialogueUtility.CalculateTruthTokens(trait, symptomIds.Count);
+        detectiveQuestionTokens = NPCDialogueUtility.CalculateDetectiveQuestionTokens(trait, symptomIds.Count);
     }
 
     public void SetProblem(NPCProblemDefinition problem)
@@ -128,9 +134,87 @@ public class NPC
         truthTokens = Math.Max(0, truthTokens - 1);
     }
 
+    public bool HasSymptomId(string symptomId)
+    {
+        if (string.IsNullOrWhiteSpace(symptomId))
+        {
+            return false;
+        }
+
+        return symptomIds.Contains(symptomId.Trim());
+    }
+
+    public bool HasRememberedAnswer(NPCQuestionType questionType, out string answer)
+    {
+        EnsureRuntimeState();
+        return rememberedAnswers.TryGetValue(questionType, out answer);
+    }
+
+    public void RememberAnswer(NPCQuestionType questionType, string answer)
+    {
+        if (string.IsNullOrWhiteSpace(answer))
+        {
+            return;
+        }
+
+        EnsureRuntimeState();
+        rememberedAnswers[questionType] = answer.Trim();
+    }
+
+    public int GetRememberedQuestionCount()
+    {
+        EnsureRuntimeState();
+        return askedQuestionTypes.Count;
+    }
+
+    public bool HasAskedQuestion(NPCQuestionType questionType)
+    {
+        EnsureRuntimeState();
+        return askedQuestionTypes.Contains(questionType);
+    }
+
+    public void MarkQuestionAsked(NPCQuestionType questionType)
+    {
+        EnsureRuntimeState();
+        askedQuestionTypes.Add(questionType);
+    }
+
+    public void ConsumeDetectiveQuestionToken()
+    {
+        detectiveQuestionTokens = Math.Max(0, detectiveQuestionTokens - 1);
+    }
+
+    public void SetLastStoryLine(string storyLine)
+    {
+        lastStoryLine = string.IsNullOrWhiteSpace(storyLine) ? null : storyLine.Trim();
+    }
+
+    public string GetLastStoryLine()
+    {
+        return lastStoryLine;
+    }
+
     private void ResetDialogueState()
     {
         truthTokens = 0;
+        detectiveQuestionTokens = 0;
         revealedSymptomIds.Clear();
+        EnsureRuntimeState();
+        askedQuestionTypes.Clear();
+        rememberedAnswers.Clear();
+        lastStoryLine = null;
+    }
+
+    private void EnsureRuntimeState()
+    {
+        if (askedQuestionTypes == null)
+        {
+            askedQuestionTypes = new HashSet<NPCQuestionType>();
+        }
+
+        if (rememberedAnswers == null)
+        {
+            rememberedAnswers = new Dictionary<NPCQuestionType, string>();
+        }
     }
 }

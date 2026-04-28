@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(PlayerProfile))]
 public class PlayerController : MonoBehaviour
 {
     private static readonly int SpeedHash = Animator.StringToHash("speed");
@@ -35,6 +36,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float dialogueHideDelay = 2f;
 
     private Rigidbody rb;
+    private PlayerProfile playerProfile;
     private Collider bodyCollider;
     private SpriteRenderer spriteRenderer;
     private float moveInput;
@@ -42,11 +44,13 @@ public class PlayerController : MonoBehaviour
     private bool jumpPressed;
     private bool isGrounded;
     private NpcOrderVisitor currentInteractableNpc;
+    private NpcOrderVisitor activeDialogueNpc;
     private float dialogueHideTimer = -1f;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        playerProfile = GetComponent<PlayerProfile>();
         bodyCollider = GetComponent<Collider>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         rb.constraints = RigidbodyConstraints.FreezeRotation;
@@ -58,8 +62,7 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        moveInput = Input.GetAxisRaw("Horizontal");
-        depthInput = useDepthMovement ? Input.GetAxisRaw("Vertical") : 0f;
+        ReadMovementInput();
         currentInteractableNpc = FindNearestInteractableNpc();
 
         if (Input.GetButtonDown("Jump"))
@@ -67,11 +70,7 @@ public class PlayerController : MonoBehaviour
             jumpPressed = true;
         }
 
-        if (Input.GetKeyDown(KeyCode.E) && currentInteractableNpc != null)
-        {
-            currentInteractableNpc.Interact();
-            ShowDialogue(currentInteractableNpc.GetInteractionText());
-        }
+        HandleDialogueInput();
 
         UpdateGroundedState();
         UpdateFacing();
@@ -80,6 +79,7 @@ public class PlayerController : MonoBehaviour
 
         if (currentInteractableNpc == null)
         {
+            activeDialogueNpc = null;
             UpdateDialogueHideTimer();
         }
         else
@@ -170,6 +170,59 @@ public class PlayerController : MonoBehaviour
         {
             SetFacingRight(false);
         }
+    }
+
+    private void ReadMovementInput()
+    {
+        moveInput = Input.GetAxisRaw("Horizontal");
+        depthInput = useDepthMovement ? Input.GetAxisRaw("Vertical") : 0f;
+    }
+
+    private void HandleDialogueInput()
+    {
+        if (Input.GetKeyDown(KeyCode.E) && currentInteractableNpc != null)
+        {
+            StartNpcConversation(currentInteractableNpc);
+        }
+
+        if (activeDialogueNpc == null)
+        {
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            AskNpcQuestion(NPCQuestionType.Name);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            AskNpcQuestion(NPCQuestionType.Gender);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            AskNpcQuestion(NPCQuestionType.Age);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            AskNpcQuestion(NPCQuestionType.AnotherStory);
+        }
+    }
+
+    private void StartNpcConversation(NpcOrderVisitor npc)
+    {
+        activeDialogueNpc = npc;
+        npc.Interact();
+        ShowDialogue(npc.GetInteractionText());
+    }
+
+    private void AskNpcQuestion(NPCQuestionType questionType)
+    {
+        if (activeDialogueNpc == null)
+        {
+            return;
+        }
+
+        ShowDialogue(activeDialogueNpc.GetQuestionResponse(questionType, playerProfile));
     }
 
     private void UpdateAnimator()

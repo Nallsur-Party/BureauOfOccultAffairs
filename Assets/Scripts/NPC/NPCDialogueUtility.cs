@@ -3,6 +3,9 @@ using UnityEngine;
 
 public static class NPCDialogueUtility
 {
+    private const string ConfusedDetailsSymptomId = "S4";
+    private const string ContradictoryStorySymptomId = "S18";
+
     public static NPCTraitType GetRandomTrait()
     {
         int traitCount = System.Enum.GetValues(typeof(NPCTraitType)).Length;
@@ -26,6 +29,18 @@ public static class NPCDialogueUtility
         }
     }
 
+    public static int CalculateDetectiveQuestionTokens(NPCTraitType trait, int symptomCount)
+    {
+        int baseTokens = trait == NPCTraitType.Honest ? 4 : trait == NPCTraitType.Neutral ? 3 : 2;
+
+        if (symptomCount <= 0)
+        {
+            return Mathf.Max(2, baseTokens - 1);
+        }
+
+        return Mathf.Clamp(baseTokens, 1, 4);
+    }
+
     public static string GetFallbackLine(NPCTraitType trait, NPCTraitFallbackCatalog fallbackCatalog)
     {
         if (fallbackCatalog != null && fallbackCatalog.TryGetLines(trait, out IReadOnlyList<string> lines) && lines.Count > 0)
@@ -34,6 +49,11 @@ public static class NPCDialogueUtility
         }
 
         return "Мне больше нечего добавить.";
+    }
+
+    public static string GetQuestionLimitLine()
+    {
+        return "Я уже ответил на все, что готов сейчас рассказать.";
     }
 
     public static string GetNextSymptomLine(
@@ -88,6 +108,112 @@ public static class NPCDialogueUtility
         string selectedLine = symptomLines[Random.Range(0, symptomLines.Count)];
         npc.MarkSymptomRevealed(symptomId);
         npc.ConsumeTruthToken();
+        npc.SetLastStoryLine(selectedLine);
         return selectedLine;
+    }
+
+    public static string GetQuestionResponse(
+        NPC npc,
+        NPCQuestionType questionType,
+        PlayerProfile playerProfile,
+        NPCSymptomLinesCatalog symptomLinesCatalog,
+        NPCTraitFallbackCatalog fallbackCatalog
+    )
+    {
+        if (npc == null)
+        {
+            return "Сначала нужно найти собеседника.";
+        }
+
+        bool canRepeatDifferently = CanVaryRepeatedQuestion(npc, questionType);
+
+        if (!canRepeatDifferently && npc.HasRememberedAnswer(questionType, out string rememberedAnswer))
+        {
+            return rememberedAnswer;
+        }
+
+        bool isNewQuestion = !npc.HasAskedQuestion(questionType);
+        int playerQuestionLimit = playerProfile != null ? playerProfile.InterrogationLimit : 1;
+
+        if (isNewQuestion)
+        {
+            if (npc.GetRememberedQuestionCount() >= playerQuestionLimit || npc.RemainingDetectiveQuestionTokens <= 0)
+            {
+                return GetQuestionLimitLine();
+            }
+
+            npc.MarkQuestionAsked(questionType);
+            npc.ConsumeDetectiveQuestionToken();
+        }
+
+        string answer = BuildQuestionAnswer(npc, questionType, symptomLinesCatalog, fallbackCatalog);
+
+        if (!canRepeatDifferently)
+        {
+            npc.RememberAnswer(questionType, answer);
+        }
+
+        return answer;
+    }
+
+    private static string BuildQuestionAnswer(
+        NPC npc,
+        NPCQuestionType questionType,
+        NPCSymptomLinesCatalog symptomLinesCatalog,
+        NPCTraitFallbackCatalog fallbackCatalog
+    )
+    {
+        switch (questionType)
+        {
+            case NPCQuestionType.Name:
+                return $"Меня зовут {npc.Name}.";
+
+            case NPCQuestionType.Gender:
+                return npc.Gender == NPC.GenderType.Male
+                    ? "Я мужчина."
+                    : npc.Gender == NPC.GenderType.Female
+                        ? "Я женщина."
+                        : "Я не хочу уточнять пол.";
+
+            case NPCQuestionType.Age:
+                return $"Мне {npc.Age}.";
+
+            case NPCQuestionType.AnotherStory:
+                return GetAnotherStoryAnswer(npc, symptomLinesCatalog, fallbackCatalog);
+
+            default:
+                return "Не понимаю, о чем именно вы спрашиваете.";
+        }
+    }
+
+    private static string GetAnotherStoryAnswer(
+        NPC npc,
+        NPCSymptomLinesCatalog symptomLinesCatalog,
+        NPCTraitFallbackCatalog fallbackCatalog
+    )
+    {
+        string lastStoryLine = npc.GetLastStoryLine();
+
+        if (!CanVaryRepeatedQuestion(npc, NPCQuestionType.AnotherStory) && !string.IsNullOrWhiteSpace(lastStoryLine))
+        {
+            return lastStoryLine;
+        }
+
+        if (npc.RemainingTruthTokens > 0 && symptomLinesCatalog != null)
+        {
+            return GetNextSymptomLine(npc, symptomLinesCatalog, fallbackCatalog);
+        }
+
+        return GetFallbackLine(npc.Trait, fallbackCatalog);
+    }
+
+    private static bool CanVaryRepeatedQuestion(NPC npc, NPCQuestionType questionType)
+    {
+        if (npc == null || questionType != NPCQuestionType.AnotherStory)
+        {
+            return false;
+        }
+
+        return npc.HasSymptomId(ConfusedDetailsSymptomId) || npc.HasSymptomId(ContradictoryStorySymptomId);
     }
 }
