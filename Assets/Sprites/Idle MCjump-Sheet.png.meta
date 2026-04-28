@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: d9d7df42c5eac614a9a1a99f957167cb
+guid: 1e80905105803d549a1a714b75831b47
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,7 +97,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Idle MC23back-Sheet_0
+      name: Idle MCjump-Sheet_0
       rect:
         serializedVersion: 2
         x: 0
@@ -111,14 +111,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b8efc58ef4294794eb4349f5cbdcd76a
-      internalID: -1866836262
+      spriteID: b9b304e470cf715478a4481bbb100190
+      internalID: 2035203528
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Idle MC23back-Sheet_1
+      name: Idle MCjump-Sheet_1
       rect:
         serializedVersion: 2
         x: 176
@@ -132,14 +132,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b6a8876a6491cb540bd4b9acdd157482
-      internalID: 165199164
+      spriteID: 03acef41f69820c44ae327d5e8804e75
+      internalID: 820516421
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Idle MC23back-Sheet_2
+      name: Idle MCjump-Sheet_2
       rect:
         serializedVersion: 2
         x: 352
@@ -153,71 +153,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 89451c8cca454a0428df21e5833f61aa
-      internalID: 674358774
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Idle MC23back-Sheet_3
-      rect:
-        serializedVersion: 2
-        x: 528
-        y: 0
-        width: 176
-        height: 176
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 96e9a2c60ea718e40ac89d70e2291534
-      internalID: -1544486157
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Idle MC23back-Sheet_4
-      rect:
-        serializedVersion: 2
-        x: 704
-        y: 0
-        width: 176
-        height: 176
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 05590e41508025f46914c370ea627dc7
-      internalID: 1013943413
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Idle MC23back-Sheet_5
-      rect:
-        serializedVersion: 2
-        x: 880
-        y: 0
-        width: 176
-        height: 176
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 371b1503d66f12b46844af49fec77d3b
-      internalID: -1970407157
+      spriteID: 64b4c422f84fd7749ba2eb42ad01638d
+      internalID: -1571735938
       vertices: []
       indices: 
       edges: []
@@ -225,7 +162,7 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: abcb9f65184988744bfd390c86df1411
+    spriteID: 8099d400485616e40b4e14be97a0b3a6
     internalID: 0
     vertices: []
     indices: 
@@ -233,12 +170,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Idle MC23back-Sheet_0: -1866836262
-      Idle MC23back-Sheet_1: 165199164
-      Idle MC23back-Sheet_2: 674358774
-      Idle MC23back-Sheet_3: -1544486157
-      Idle MC23back-Sheet_4: 1013943413
-      Idle MC23back-Sheet_5: -1970407157
+      Idle MCjump-Sheet_0: 2035203528
+      Idle MCjump-Sheet_1: 820516421
+      Idle MCjump-Sheet_2: -1571735938
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
