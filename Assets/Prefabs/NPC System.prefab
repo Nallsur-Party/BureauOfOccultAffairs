@@ -53,22 +53,13 @@ MonoBehaviour:
   maxAge: 65
   noProblemChance: 0.15
   namePool:
-    maleNames:
-    - "\u0418\u0433\u043D\u0430\u0442"
-    - "\u042D\u0440\u0447\u0438\u043C"
-    - "\u0414\u0430\u043D\u0438\u043B"
-    femaleNames:
-    - "\u0418\u0433\u043D\u0430\u0442\u0438\u044F"
-    - "\u042D\u0440\u0447\u0438\u043C\u0438\u044F"
-    - "\u0414\u0430\u043D\u0438\u043B\u0438\u044F"
-    otherNames:
-    - "\u0422\u0440\u0430\u043D\u0441"
-    - "\u0422\u0440\u0430\u043D\u0441\u0414\u0430\u043D\u0438\u043B"
-    - "\u0422\u0440\u0430\u043D\u0441\u0418\u0433\u043D\u0430\u0442"
+    maleNames: []
+    femaleNames: []
+    otherNames: []
     surnames: []
   loadOnAwake: 1
   generatedNpc:
-    npcName: "\u0422\u0440\u0430\u043D\u0441\u0418\u0433\u043D\u0430\u0442"
+    npcName: 
     gender: 2
     age: 58
     trait: 0
@@ -80,8 +71,8 @@ MonoBehaviour:
       \u0432\u0435\u0449\u044C"
     - "\u0421\u0442\u0440\u0430\u043D\u043D\u044B\u0435 \u0441\u043E\u0432\u043F\u0430\u0434\u0435\u043D\u0438\u044F"
     preparedConversationLines: []
+    preparedFallbackLines: []
     truthTokens: 0
     lieTokens: 0
-    followUpStoryTokens: 0
     detectiveQuestionTokens: 0
     spentDetectiveQuestionCount: 0
