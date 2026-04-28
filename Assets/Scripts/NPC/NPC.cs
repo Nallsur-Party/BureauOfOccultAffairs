@@ -22,7 +22,6 @@ public class NPC
     [SerializeField] private List<string> preparedConversationLines = new List<string>();
     [SerializeField] private int truthTokens;
     [SerializeField] private int lieTokens;
-    [SerializeField] private int followUpStoryTokens;
     [SerializeField] private int detectiveQuestionTokens;
     [SerializeField] private int spentDetectiveQuestionCount;
     [NonSerialized] private HashSet<NPCQuestionType> askedQuestionTypes = new HashSet<NPCQuestionType>();
@@ -48,7 +47,6 @@ public class NPC
     public int RemainingTruthTokens => truthTokens;
     public int RemainingLieTokens => lieTokens;
     public int RemainingConversationTokens => truthTokens + lieTokens;
-    public int RemainingFollowUpStoryTokens => followUpStoryTokens;
     public int RemainingDetectiveQuestionTokens => detectiveQuestionTokens;
     public int SpentDetectiveQuestionCount => spentDetectiveQuestionCount;
     public bool HasProblem => !string.IsNullOrWhiteSpace(problemName);
@@ -104,7 +102,6 @@ public class NPC
 
         truthTokens = NPCDialogueUtility.CalculateTruthTokens(trait);
         lieTokens = NPCDialogueUtility.CalculateLieTokens(trait);
-        followUpStoryTokens = NPCDialogueUtility.CalculateFollowUpStoryTokens(trait, symptomIds.Count);
         detectiveQuestionTokens = NPCDialogueUtility.CalculateDetectiveQuestionTokens(trait);
     }
 
@@ -170,11 +167,6 @@ public class NPC
         {
             ConsumeLieToken();
         }
-    }
-
-    public void ConsumeFollowUpStoryToken()
-    {
-        followUpStoryTokens = Math.Max(0, followUpStoryTokens - 1);
     }
 
     public bool HasSymptomId(string symptomId)
@@ -391,7 +383,6 @@ public class NPC
     {
         truthTokens = 0;
         lieTokens = 0;
-        followUpStoryTokens = 0;
         detectiveQuestionTokens = 0;
         spentDetectiveQuestionCount = 0;
         EnsureRuntimeState();

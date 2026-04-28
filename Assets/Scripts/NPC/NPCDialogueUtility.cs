@@ -38,23 +38,6 @@ public static class NPCDialogueUtility
         return GetTraitTokenProfile(trait).LieTokens;
     }
 
-    public static int CalculateFollowUpStoryTokens(NPCTraitType trait, int symptomCount)
-    {
-        int clampedSymptomCount = Mathf.Max(0, symptomCount);
-
-        switch (trait)
-        {
-            case NPCTraitType.Honest:
-                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.85f));
-
-            case NPCTraitType.Liar:
-                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.4f));
-
-            default:
-                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.6f));
-        }
-    }
-
     public static int CalculateDetectiveQuestionTokens(NPCTraitType trait)
     {
         NPCTraitTokenProfile profile = GetTraitTokenProfile(trait);
@@ -190,6 +173,11 @@ public static class NPCDialogueUtility
 
         if (!string.IsNullOrWhiteSpace(repeatedConversationLine))
         {
+            if (npc.RemainingDetectiveQuestionTokens > 0)
+            {
+                ConsumeAnotherStoryQuestionToken(npc);
+            }
+
             npc.RecordQuestionAnswer(NPCQuestionType.AnotherStory, repeatedConversationLine);
             return repeatedConversationLine;
         }
@@ -224,8 +212,7 @@ public static class NPCDialogueUtility
             return unstableLine;
         }
 
-        if (npc.RemainingFollowUpStoryTokens > 0
-            && symptomLinesCatalog != null
+        if (symptomLinesCatalog != null
             && TryGetFollowUpLine(npc, symptomLinesCatalog, out string followUpLine))
         {
             if (npc.RemainingDetectiveQuestionTokens <= 0)
@@ -239,7 +226,6 @@ public static class NPCDialogueUtility
             }
 
             ConsumeAnotherStoryQuestionToken(npc);
-            npc.ConsumeFollowUpStoryToken();
             npc.MarkFollowUpLineTold(followUpLine);
             npc.RecordQuestionAnswer(NPCQuestionType.AnotherStory, followUpLine);
             return followUpLine;
@@ -247,8 +233,7 @@ public static class NPCDialogueUtility
 
         if (npc.TryGetRepeatedQuestionAnswer(NPCQuestionType.AnotherStory, out string repeatedAnotherStoryAnswer))
         {
-            if (CanVaryFollowUpLine(npc)
-                && npc.RemainingDetectiveQuestionTokens > 0)
+            if (npc.RemainingDetectiveQuestionTokens > 0)
             {
                 ConsumeAnotherStoryQuestionToken(npc);
             }
