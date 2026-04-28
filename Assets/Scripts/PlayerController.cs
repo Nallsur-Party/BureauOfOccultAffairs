@@ -244,9 +244,10 @@ public class PlayerController : MonoBehaviour
         }
 
         Vector3 velocity = rb != null ? rb.velocity : Vector3.zero;
+        Vector3 localVelocity = transform.InverseTransformDirection(velocity);
         float planarSpeed = new Vector2(velocity.x, velocity.z).magnitude;
-        float speedX = Mathf.Abs(velocity.x);
-        float speedZ = velocity.z;
+        float speedX = Mathf.Abs(localVelocity.x);
+        float speedZ = localVelocity.z;
         bool isMovingForward = speedZ >= speedX;
         bool isMovingBackward = speedZ <= -speedX;
         animator.SetFloat(SpeedHash, planarSpeed);
