@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: d9d7df42c5eac614a9a1a99f957167cb
+guid: fc84b1774beefea4f8df3e9f30244458
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -97,7 +97,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Idle MC23back-Sheet_0
+      name: MC idle Animation sheet_0
       rect:
         serializedVersion: 2
         x: 0
@@ -111,14 +111,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b8efc58ef4294794eb4349f5cbdcd76a
-      internalID: -1866836262
+      spriteID: 9db7ac51aca40c74f9f3a53fdbbd8cb3
+      internalID: -1716239151
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Idle MC23back-Sheet_1
+      name: MC idle Animation sheet_1
       rect:
         serializedVersion: 2
         x: 176
@@ -132,14 +132,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b6a8876a6491cb540bd4b9acdd157482
-      internalID: 165199164
+      spriteID: 378063249ced0bf48aba798a5252d0cc
+      internalID: 1534214899
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Idle MC23back-Sheet_2
+      name: MC idle Animation sheet_2
       rect:
         serializedVersion: 2
         x: 352
@@ -153,14 +153,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 89451c8cca454a0428df21e5833f61aa
-      internalID: 674358774
+      spriteID: 0bf1ec9e469a70942a3953dfe4390ccc
+      internalID: -941912672
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Idle MC23back-Sheet_3
+      name: MC idle Animation sheet_3
       rect:
         serializedVersion: 2
         x: 528
@@ -174,50 +174,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 96e9a2c60ea718e40ac89d70e2291534
-      internalID: -1544486157
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Idle MC23back-Sheet_4
-      rect:
-        serializedVersion: 2
-        x: 704
-        y: 0
-        width: 176
-        height: 176
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 05590e41508025f46914c370ea627dc7
-      internalID: 1013943413
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Idle MC23back-Sheet_5
-      rect:
-        serializedVersion: 2
-        x: 880
-        y: 0
-        width: 176
-        height: 176
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 371b1503d66f12b46844af49fec77d3b
-      internalID: -1970407157
+      spriteID: eb6a741adb9923645adc25b4c523905d
+      internalID: 147939950
       vertices: []
       indices: 
       edges: []
@@ -225,7 +183,7 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: abcb9f65184988744bfd390c86df1411
+    spriteID: f2b802190c8b54748926abf60ee94aa0
     internalID: 0
     vertices: []
     indices: 
@@ -233,12 +191,10 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Idle MC23back-Sheet_0: -1866836262
-      Idle MC23back-Sheet_1: 165199164
-      Idle MC23back-Sheet_2: 674358774
-      Idle MC23back-Sheet_3: -1544486157
-      Idle MC23back-Sheet_4: 1013943413
-      Idle MC23back-Sheet_5: -1970407157
+      MC idle Animation sheet_0: -1716239151
+      MC idle Animation sheet_1: 1534214899
+      MC idle Animation sheet_2: -941912672
+      MC idle Animation sheet_3: 147939950
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
