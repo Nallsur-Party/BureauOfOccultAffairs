@@ -438,12 +438,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2033053607}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &436767491 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 453324149459047209, guid: 12ce90bdcae983f418ccea3e8573a6a1,
-    type: 3}
-  m_PrefabInstance: {fileID: 5388021577375985908}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &452424285
 GameObject:
   m_ObjectHideFlags: 0
@@ -1698,11 +1692,6 @@ PrefabInstance:
       propertyPath: dialogueWindow
       value: 
       objectReference: {fileID: 1864934639}
-    - target: {fileID: 5112496190937396943, guid: 3ed2440a234f459438767f86520d7af5,
-        type: 3}
-      propertyPath: interactionPrompt
-      value: 
-      objectReference: {fileID: 436767491}
     - target: {fileID: 9175066928066003693, guid: 3ed2440a234f459438767f86520d7af5,
         type: 3}
       propertyPath: m_Name
@@ -1711,7 +1700,11 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4020532227842445004, guid: 3ed2440a234f459438767f86520d7af5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 3ed2440a234f459438767f86520d7af5, type: 3}
 --- !u!114 &2021392567 stripped
 MonoBehaviour:
@@ -2448,10 +2441,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 8434645889755511153, guid: 12ce90bdcae983f418ccea3e8573a6a1,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 3743219198571129765, guid: 12ce90bdcae983f418ccea3e8573a6a1,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
