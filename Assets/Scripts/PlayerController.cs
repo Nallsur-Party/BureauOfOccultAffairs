@@ -5,6 +5,8 @@ using TMPro;
 public class PlayerController : MonoBehaviour
 {
     private static readonly int SpeedHash = Animator.StringToHash("speed");
+    private static readonly int IsGroundedHash = Animator.StringToHash("isGrounded");
+    private static readonly int VerticalSpeedHash = Animator.StringToHash("verticalSpeed");
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
@@ -180,6 +182,8 @@ public class PlayerController : MonoBehaviour
         Vector3 velocity = rb != null ? rb.velocity : Vector3.zero;
         float planarSpeed = new Vector2(velocity.x, velocity.z).magnitude;
         animator.SetFloat(SpeedHash, planarSpeed);
+        animator.SetBool(IsGroundedHash, isGrounded);
+        animator.SetFloat(VerticalSpeedHash, velocity.y);
     }
 
     private void SetFacingRight(bool facingRight)

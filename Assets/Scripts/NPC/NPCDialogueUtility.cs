@@ -1,0 +1,115 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public static class NPCDialogueUtility
+{
+    private static readonly string[] HonestFallbackLines =
+    {
+        "Я уже рассказал все, что могу вспомнить.",
+        "Это все, что я знаю. Не хочу выдумывать лишнее.",
+        "Больше ясных деталей у меня нет. Только тот же страх."
+    };
+
+    private static readonly string[] NeutralFallbackLines =
+    {
+        "Не уверен, что еще могу добавить.",
+        "Пока это все, что я могу рассказать.",
+        "Остальное расплывается. Я сам себе не доверяю."
+    };
+
+    private static readonly string[] LiarFallbackLines =
+    {
+        "На этом все. Больше говорить не о чем.",
+        "Ты и так знаешь достаточно.",
+        "Я бы предпочел остановиться на этом."
+    };
+
+    public static NPCTraitType GetRandomTrait()
+    {
+        int traitCount = System.Enum.GetValues(typeof(NPCTraitType)).Length;
+        return (NPCTraitType)Random.Range(0, traitCount);
+    }
+
+    public static int CalculateTruthTokens(NPCTraitType trait, int symptomCount)
+    {
+        int clampedSymptomCount = Mathf.Max(0, symptomCount);
+
+        switch (trait)
+        {
+            case NPCTraitType.Honest:
+                return Mathf.Max(1, clampedSymptomCount);
+
+            case NPCTraitType.Liar:
+                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.35f));
+
+            default:
+                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.6f));
+        }
+    }
+
+    public static string GetFallbackLine(NPCTraitType trait)
+    {
+        switch (trait)
+        {
+            case NPCTraitType.Honest:
+                return HonestFallbackLines[Random.Range(0, HonestFallbackLines.Length)];
+
+            case NPCTraitType.Liar:
+                return LiarFallbackLines[Random.Range(0, LiarFallbackLines.Length)];
+
+            default:
+                return NeutralFallbackLines[Random.Range(0, NeutralFallbackLines.Length)];
+        }
+    }
+
+    public static string GetNextSymptomLine(NPC npc, NPCSymptomLinesCatalog symptomLinesCatalog)
+    {
+        if (npc == null)
+        {
+            return "Данные NPC еще не сгенерированы.";
+        }
+
+        if (!npc.HasProblem || npc.SymptomIds.Count == 0)
+        {
+            return "Ничего странного со мной вроде бы не происходит.";
+        }
+
+        if (npc.RemainingTruthTokens <= 0 || symptomLinesCatalog == null)
+        {
+            return GetFallbackLine(npc.Trait);
+        }
+
+        List<int> candidateIndices = new List<int>();
+
+        for (int i = 0; i < npc.SymptomIds.Count; i++)
+        {
+            if (npc.HasRevealedSymptom(npc.SymptomIds[i]))
+            {
+                continue;
+            }
+
+            if (symptomLinesCatalog.TryGetLines(npc.SymptomIds[i], out IReadOnlyList<string> lines) && lines.Count > 0)
+            {
+                candidateIndices.Add(i);
+            }
+        }
+
+        if (candidateIndices.Count == 0)
+        {
+            return GetFallbackLine(npc.Trait);
+        }
+
+        int symptomIndex = candidateIndices[Random.Range(0, candidateIndices.Count)];
+        string symptomId = npc.SymptomIds[symptomIndex];
+
+        if (!symptomLinesCatalog.TryGetLines(symptomId, out IReadOnlyList<string> symptomLines) || symptomLines.Count == 0)
+        {
+            return GetFallbackLine(npc.Trait);
+        }
+
+        string selectedLine = symptomLines[Random.Range(0, symptomLines.Count)];
+        npc.MarkSymptomRevealed(symptomId);
+        npc.ConsumeTruthToken();
+        return selectedLine;
+    }
+}

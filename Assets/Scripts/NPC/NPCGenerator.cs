@@ -41,6 +41,7 @@ public class NPCGenerator : MonoBehaviour
 
     [Header("Data")]
     [SerializeField] private TextAsset npcProblemsXml;
+    [SerializeField] private TextAsset npcSymptomeLinesXml;
 
     [Header("NPC Settings")]
     [SerializeField] private int minAge = 18;
@@ -53,9 +54,11 @@ public class NPCGenerator : MonoBehaviour
     [SerializeField] private NPC generatedNpc;
 
     private NPCProblemCatalog problemCatalog;
+    private NPCSymptomLinesCatalog symptomLinesCatalog;
 
     public NPC GeneratedNpc => generatedNpc;
     public NPCProblemCatalog ProblemCatalog => problemCatalog;
+    public NPCSymptomLinesCatalog SymptomLinesCatalog => symptomLinesCatalog;
     public bool IsCatalogLoaded => problemCatalog != null;
 
     private void Awake()
@@ -69,6 +72,8 @@ public class NPCGenerator : MonoBehaviour
     [ContextMenu("Load NPC Catalog")]
     public void LoadCatalog()
     {
+        symptomLinesCatalog = null;
+
         if (npcProblemsXml == null)
         {
             Debug.LogWarning($"{nameof(NPCGenerator)} on {name} has no XML assigned.", this);
@@ -77,6 +82,11 @@ public class NPCGenerator : MonoBehaviour
         }
 
         problemCatalog = NPCProblemsLoader.Load(npcProblemsXml);
+
+        if (npcSymptomeLinesXml != null)
+        {
+            symptomLinesCatalog = NPCSymptomLinesLoader.Load(npcSymptomeLinesXml);
+        }
     }
 
     [ContextMenu("Generate NPC")]
@@ -87,8 +97,9 @@ public class NPCGenerator : MonoBehaviour
         NPC.GenderType gender = GetRandomGender();
         string npcName = namePool.GetRandomName(gender);
         int age = UnityEngine.Random.Range(Mathf.Min(minAge, maxAge), Mathf.Max(minAge, maxAge) + 1);
+        NPCTraitType trait = NPCDialogueUtility.GetRandomTrait();
 
-        generatedNpc = new NPC(npcName, gender, age);
+        generatedNpc = new NPC(npcName, gender, age, trait);
 
         if (problemCatalog == null || problemCatalog.Problems.Count == 0 || UnityEngine.Random.value <= noProblemChance)
         {
@@ -103,7 +114,7 @@ public class NPCGenerator : MonoBehaviour
     {
         EnsureCatalogLoaded();
 
-        NPC npc = new NPC(npcName, gender, age);
+        NPC npc = new NPC(npcName, gender, age, NPCDialogueUtility.GetRandomTrait());
 
         if (string.IsNullOrWhiteSpace(problemName))
         {
@@ -129,6 +140,12 @@ public class NPCGenerator : MonoBehaviour
         }
 
         return problemCatalog.TryGetProblem(problemName, out problem);
+    }
+
+    public string GetDialogueLine(NPC npc)
+    {
+        EnsureCatalogLoaded();
+        return NPCDialogueUtility.GetNextSymptomLine(npc, symptomLinesCatalog);
     }
 
     private void EnsureCatalogLoaded()
