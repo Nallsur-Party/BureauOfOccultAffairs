@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviour
     private static readonly int IsMovingBackwardHash = Animator.StringToHash("isMovingBackward");
     private static readonly int IsGroundedHash = Animator.StringToHash("isGrounded");
     private static readonly int VerticalSpeedHash = Animator.StringToHash("verticalSpeed");
+    private static readonly int IsRunningHash = Animator.StringToHash("isRunning");
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
@@ -20,6 +21,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float groundAcceleration = 35f;
     [SerializeField] private float airAcceleration = 20f;
     [SerializeField] private float wallCheckDistance = 0.15f;
+    [SerializeField] private float sprintMultiplier = 2f;
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
@@ -47,6 +49,7 @@ public class PlayerController : MonoBehaviour
     private float depthInput;
     private bool jumpPressed;
     private bool isGrounded;
+    private bool isSprinting;
     private NpcOrderVisitor currentInteractableNpc;
     private NpcOrderVisitor activeDialogueNpc;
     private float dialogueHideTimer = -1f;
@@ -104,7 +107,7 @@ public class PlayerController : MonoBehaviour
             moveDirection.Normalize();
         }
         
-        Vector3 targetPlanarVelocity = moveDirection * moveSpeed;
+        Vector3 targetPlanarVelocity = moveDirection * (isSprinting ? moveSpeed * sprintMultiplier : moveSpeed);
         Vector3 currentPlanarVelocity = new Vector3(velocity.x, 0f, velocity.z);
         float acceleration = isGrounded ? groundAcceleration : airAcceleration;
 
@@ -187,6 +190,7 @@ public class PlayerController : MonoBehaviour
     {
         moveInput = Input.GetAxisRaw("Horizontal");
         depthInput = useDepthMovement ? Input.GetAxisRaw("Vertical") : 0f;
+        isSprinting = Input.GetKey(KeyCode.LeftShift);
     }
 
     private void HandleDialogueInput()
@@ -250,6 +254,7 @@ public class PlayerController : MonoBehaviour
         float speedZ = localVelocity.z;
         bool isMovingForward = speedZ >= speedX;
         bool isMovingBackward = speedZ <= -speedX;
+        bool isRunning = planarSpeed > moveSpeed + 0.1f;
         animator.SetFloat(SpeedHash, planarSpeed);
         animator.SetFloat(SpeedXHash, speedX);
         animator.SetFloat(SpeedZHash, speedZ);
@@ -257,6 +262,7 @@ public class PlayerController : MonoBehaviour
         animator.SetBool(IsMovingBackwardHash, isMovingBackward);
         animator.SetBool(IsGroundedHash, isGrounded);
         animator.SetFloat(VerticalSpeedHash, velocity.y);
+        animator.SetBool(IsRunningHash, isRunning);
     }
 
     private void SetFacingRight(bool facingRight)
