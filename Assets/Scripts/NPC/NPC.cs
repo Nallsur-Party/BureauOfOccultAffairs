@@ -5,6 +5,8 @@ using UnityEngine;
 [Serializable]
 public class NPC
 {
+    private const int RepeatIndexStart = 0;
+
     public enum GenderType
     {
         Male,
@@ -127,12 +129,7 @@ public class NPC
 
         foreach (string line in lines)
         {
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            preparedConversationLines.Add(line.Trim());
+            AddNormalizedLine(preparedConversationLines, line);
         }
     }
 
@@ -221,24 +218,14 @@ public class NPC
 
     public bool HasToldConversationLine(string storyLine)
     {
-        if (string.IsNullOrWhiteSpace(storyLine))
-        {
-            return false;
-        }
-
         EnsureRuntimeState();
-        return conversationLines.Contains(storyLine.Trim());
+        return ContainsNormalizedLine(conversationLines, storyLine);
     }
 
     public bool HasToldFollowUpLine(string storyLine)
     {
-        if (string.IsNullOrWhiteSpace(storyLine))
-        {
-            return false;
-        }
-
         EnsureRuntimeState();
-        return followUpLines.Contains(storyLine.Trim());
+        return ContainsNormalizedLine(followUpLines, storyLine);
     }
 
     public bool HasToldAnyLine(string storyLine)
@@ -248,34 +235,14 @@ public class NPC
 
     public void MarkConversationLineTold(string storyLine)
     {
-        if (string.IsNullOrWhiteSpace(storyLine))
-        {
-            return;
-        }
-
         EnsureRuntimeState();
-        string normalizedLine = storyLine.Trim();
-
-        if (conversationLines.Add(normalizedLine))
-        {
-            conversationHistory.Add(normalizedLine);
-        }
+        AddHistoryLine(conversationLines, conversationHistory, storyLine);
     }
 
     public void MarkFollowUpLineTold(string storyLine)
     {
-        if (string.IsNullOrWhiteSpace(storyLine))
-        {
-            return;
-        }
-
         EnsureRuntimeState();
-        string normalizedLine = storyLine.Trim();
-
-        if (followUpLines.Add(normalizedLine))
-        {
-            followUpHistory.Add(normalizedLine);
-        }
+        AddHistoryLine(followUpLines, followUpHistory, storyLine);
     }
 
     public IReadOnlyList<string> GetConversationHistory()
@@ -292,19 +259,8 @@ public class NPC
 
     public void RecordQuestionAnswer(NPCQuestionType questionType, string answer)
     {
-        if (string.IsNullOrWhiteSpace(answer))
-        {
-            return;
-        }
-
         EnsureRuntimeState();
-        if (!questionAnswerHistoryByType.TryGetValue(questionType, out List<string> answers))
-        {
-            answers = new List<string>();
-            questionAnswerHistoryByType[questionType] = answers;
-        }
-
-        answers.Add(answer.Trim());
+        AddNormalizedLine(GetOrCreateQuestionAnswerHistory(questionType), answer);
     }
 
     public bool TryGetRepeatedConversationLine(out string repeatedLine)
@@ -315,21 +271,21 @@ public class NPC
         if (conversationHistory.Count == 0)
         {
             shouldRepeatConversationLimitLine = true;
-            nextConversationRepeatIndex = 0;
+            nextConversationRepeatIndex = RepeatIndexStart;
             return false;
         }
 
         if (shouldRepeatConversationLimitLine)
         {
             shouldRepeatConversationLimitLine = false;
-            nextConversationRepeatIndex = 0;
+            nextConversationRepeatIndex = RepeatIndexStart;
             return false;
         }
 
         if (nextConversationRepeatIndex >= conversationHistory.Count)
         {
             shouldRepeatConversationLimitLine = true;
-            nextConversationRepeatIndex = 0;
+            nextConversationRepeatIndex = RepeatIndexStart;
             return false;
         }
 
@@ -346,31 +302,23 @@ public class NPC
         if (!questionAnswerHistoryByType.TryGetValue(questionType, out List<string> answers) || answers.Count == 0)
         {
             shouldRepeatQuestionLimitLineByType[questionType] = true;
-            nextQuestionRepeatIndexByType[questionType] = 0;
+            nextQuestionRepeatIndexByType[questionType] = RepeatIndexStart;
             return false;
         }
 
-        if (!shouldRepeatQuestionLimitLineByType.ContainsKey(questionType))
-        {
-            shouldRepeatQuestionLimitLineByType[questionType] = true;
-        }
-
-        if (!nextQuestionRepeatIndexByType.ContainsKey(questionType))
-        {
-            nextQuestionRepeatIndexByType[questionType] = 0;
-        }
+        EnsureQuestionRepeatState(questionType);
 
         if (shouldRepeatQuestionLimitLineByType[questionType])
         {
             shouldRepeatQuestionLimitLineByType[questionType] = false;
-            nextQuestionRepeatIndexByType[questionType] = 0;
+            nextQuestionRepeatIndexByType[questionType] = RepeatIndexStart;
             return false;
         }
 
         if (nextQuestionRepeatIndexByType[questionType] >= answers.Count)
         {
             shouldRepeatQuestionLimitLineByType[questionType] = true;
-            nextQuestionRepeatIndexByType[questionType] = 0;
+            nextQuestionRepeatIndexByType[questionType] = RepeatIndexStart;
             return false;
         }
 
@@ -393,10 +341,69 @@ public class NPC
         conversationHistory.Clear();
         followUpHistory.Clear();
         questionAnswerHistoryByType.Clear();
-        nextConversationRepeatIndex = 0;
+        nextConversationRepeatIndex = RepeatIndexStart;
         nextQuestionRepeatIndexByType.Clear();
         shouldRepeatConversationLimitLine = true;
         shouldRepeatQuestionLimitLineByType.Clear();
+    }
+
+    private List<string> GetOrCreateQuestionAnswerHistory(NPCQuestionType questionType)
+    {
+        if (!questionAnswerHistoryByType.TryGetValue(questionType, out List<string> answers))
+        {
+            answers = new List<string>();
+            questionAnswerHistoryByType[questionType] = answers;
+        }
+
+        return answers;
+    }
+
+    private void EnsureQuestionRepeatState(NPCQuestionType questionType)
+    {
+        if (!shouldRepeatQuestionLimitLineByType.ContainsKey(questionType))
+        {
+            shouldRepeatQuestionLimitLineByType[questionType] = true;
+        }
+
+        if (!nextQuestionRepeatIndexByType.ContainsKey(questionType))
+        {
+            nextQuestionRepeatIndexByType[questionType] = RepeatIndexStart;
+        }
+    }
+
+    private static bool ContainsNormalizedLine(HashSet<string> lines, string line)
+    {
+        if (lines == null || string.IsNullOrWhiteSpace(line))
+        {
+            return false;
+        }
+
+        return lines.Contains(line.Trim());
+    }
+
+    private static void AddHistoryLine(HashSet<string> lines, List<string> history, string line)
+    {
+        if (lines == null || history == null || string.IsNullOrWhiteSpace(line))
+        {
+            return;
+        }
+
+        string normalizedLine = line.Trim();
+
+        if (lines.Add(normalizedLine))
+        {
+            history.Add(normalizedLine);
+        }
+    }
+
+    private static void AddNormalizedLine(List<string> lines, string line)
+    {
+        if (lines == null || string.IsNullOrWhiteSpace(line))
+        {
+            return;
+        }
+
+        lines.Add(line.Trim());
     }
 
     private void EnsureRuntimeState()

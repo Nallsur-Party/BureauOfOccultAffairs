@@ -6,6 +6,7 @@ public static class NPCDialogueUtility
     private const string MemoryGapSymptomId = "S1";
     private const string ConfusedDetailsSymptomId = "S4";
     private const string ContradictoryStorySymptomId = "S18";
+    private const string MissingNpcLine = "Сначала нужно найти собеседника.";
 
     public static NPCTraitType GetRandomTrait()
     {
@@ -103,7 +104,7 @@ public static class NPCDialogueUtility
     {
         if (npc == null)
         {
-            return "Сначала нужно найти собеседника.";
+            return MissingNpcLine;
         }
 
         if (questionType == NPCQuestionType.AnotherStory)
@@ -118,12 +119,7 @@ public static class NPCDialogueUtility
 
         if (npc.RemainingDetectiveQuestionTokens <= 0)
         {
-            if (npc.TryGetRepeatedQuestionAnswer(questionType, out string repeatedAnswer))
-            {
-                return repeatedAnswer;
-            }
-
-            return GetQuestionLimitLine();
+            return GetRepeatedQuestionAnswerOrLimit(npc, questionType);
         }
 
         npc.MarkQuestionAsked(questionType);
@@ -166,7 +162,7 @@ public static class NPCDialogueUtility
     {
         if (npc == null)
         {
-            return "Сначала нужно найти собеседника.";
+            return MissingNpcLine;
         }
 
         string repeatedConversationLine = TryGetMemoryGapConversationLine(npc);
@@ -184,12 +180,7 @@ public static class NPCDialogueUtility
 
         if (npc.HasSymptomId(MemoryGapSymptomId))
         {
-            if (npc.TryGetRepeatedQuestionAnswer(NPCQuestionType.AnotherStory, out string repeatedQuestionAnswer))
-            {
-                return repeatedQuestionAnswer;
-            }
-
-            return GetQuestionLimitLine();
+            return GetRepeatedQuestionAnswerOrLimit(npc, NPCQuestionType.AnotherStory);
         }
 
         if (CanVaryFollowUpLine(npc)
@@ -198,12 +189,7 @@ public static class NPCDialogueUtility
         {
             if (npc.RemainingDetectiveQuestionTokens <= 0)
             {
-                if (npc.TryGetRepeatedQuestionAnswer(NPCQuestionType.AnotherStory, out string repeatedQuestionAnswer))
-                {
-                    return repeatedQuestionAnswer;
-                }
-
-                return GetQuestionLimitLine();
+                return GetRepeatedQuestionAnswerOrLimit(npc, NPCQuestionType.AnotherStory);
             }
 
             ConsumeAnotherStoryQuestionToken(npc);
@@ -217,12 +203,7 @@ public static class NPCDialogueUtility
         {
             if (npc.RemainingDetectiveQuestionTokens <= 0)
             {
-                if (npc.TryGetRepeatedQuestionAnswer(NPCQuestionType.AnotherStory, out string repeatedQuestionAnswer))
-                {
-                    return repeatedQuestionAnswer;
-                }
-
-                return GetQuestionLimitLine();
+                return GetRepeatedQuestionAnswerOrLimit(npc, NPCQuestionType.AnotherStory);
             }
 
             ConsumeAnotherStoryQuestionToken(npc);
@@ -239,6 +220,16 @@ public static class NPCDialogueUtility
             }
 
             return repeatedAnotherStoryAnswer;
+        }
+
+        return GetQuestionLimitLine();
+    }
+
+    private static string GetRepeatedQuestionAnswerOrLimit(NPC npc, NPCQuestionType questionType)
+    {
+        if (npc != null && npc.TryGetRepeatedQuestionAnswer(questionType, out string repeatedAnswer))
+        {
+            return repeatedAnswer;
         }
 
         return GetQuestionLimitLine();

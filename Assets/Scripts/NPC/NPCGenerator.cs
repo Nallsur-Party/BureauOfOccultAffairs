@@ -8,6 +8,8 @@ public class NPCGenerator : MonoBehaviour
     [Serializable]
     private class NamePool
     {
+        private const string UnnamedNpc = "Unnamed NPC";
+
         [SerializeField] private List<string> maleNames = new List<string>();
         [SerializeField] private List<string> femaleNames = new List<string>();
         [SerializeField] private List<string> otherNames = new List<string>();
@@ -17,19 +19,16 @@ public class NPCGenerator : MonoBehaviour
         {
             List<string> selectedPool = GetPool(gender);
 
-            if (selectedPool.Count == 0)
+            if (!TryGetRandomValue(selectedPool, out string firstName))
             {
-                return "Unnamed NPC";
+                return UnnamedNpc;
             }
 
-            string firstName = selectedPool[UnityEngine.Random.Range(0, selectedPool.Count)];
-
-            if (surnames.Count == 0)
+            if (!TryGetRandomValue(surnames, out string surname))
             {
                 return firstName;
             }
 
-            string surname = surnames[UnityEngine.Random.Range(0, surnames.Count)];
             return $"{firstName} {surname}";
         }
 
@@ -89,6 +88,19 @@ public class NPCGenerator : MonoBehaviour
             }
 
             return values;
+        }
+
+        private static bool TryGetRandomValue(List<string> values, out string selectedValue)
+        {
+            selectedValue = null;
+
+            if (values == null || values.Count == 0)
+            {
+                return false;
+            }
+
+            selectedValue = values[UnityEngine.Random.Range(0, values.Count)];
+            return !string.IsNullOrWhiteSpace(selectedValue);
         }
     }
 
