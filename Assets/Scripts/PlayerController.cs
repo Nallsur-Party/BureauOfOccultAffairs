@@ -6,6 +6,10 @@ using TMPro;
 public class PlayerController : MonoBehaviour
 {
     private static readonly int SpeedHash = Animator.StringToHash("speed");
+    private static readonly int SpeedXHash = Animator.StringToHash("speedX");
+    private static readonly int SpeedZHash = Animator.StringToHash("speedZ");
+    private static readonly int IsMovingForwardHash = Animator.StringToHash("isMovingForward");
+    private static readonly int IsMovingBackwardHash = Animator.StringToHash("isMovingBackward");
     private static readonly int IsGroundedHash = Animator.StringToHash("isGrounded");
     private static readonly int VerticalSpeedHash = Animator.StringToHash("verticalSpeed");
 
@@ -91,9 +95,16 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         Vector3 velocity = rb.velocity;
-        Vector3 targetPlanarVelocity = useDepthMovement
-            ? new Vector3(moveInput, 0f, depthInput) * moveSpeed
-            : new Vector3(moveInput * moveSpeed, 0f, 0f);
+        Vector3 moveDirection = useDepthMovement
+            ? new Vector3(moveInput, 0f, depthInput)
+            : new Vector3(moveInput, 0f, 0f);
+        
+        if (moveDirection.sqrMagnitude > 0.01f)
+        {
+            moveDirection.Normalize();
+        }
+        
+        Vector3 targetPlanarVelocity = moveDirection * moveSpeed;
         Vector3 currentPlanarVelocity = new Vector3(velocity.x, 0f, velocity.z);
         float acceleration = isGrounded ? groundAcceleration : airAcceleration;
 
@@ -234,7 +245,15 @@ public class PlayerController : MonoBehaviour
 
         Vector3 velocity = rb != null ? rb.velocity : Vector3.zero;
         float planarSpeed = new Vector2(velocity.x, velocity.z).magnitude;
+        float speedX = Mathf.Abs(velocity.x);
+        float speedZ = velocity.z;
+        bool isMovingForward = speedZ >= speedX;
+        bool isMovingBackward = speedZ <= -speedX;
         animator.SetFloat(SpeedHash, planarSpeed);
+        animator.SetFloat(SpeedXHash, speedX);
+        animator.SetFloat(SpeedZHash, speedZ);
+        animator.SetBool(IsMovingForwardHash, isMovingForward);
+        animator.SetBool(IsMovingBackwardHash, isMovingBackward);
         animator.SetBool(IsGroundedHash, isGrounded);
         animator.SetFloat(VerticalSpeedHash, velocity.y);
     }
