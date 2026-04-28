@@ -42,6 +42,7 @@ public class NPCGenerator : MonoBehaviour
     [Header("Data")]
     [SerializeField] private TextAsset npcProblemsXml;
     [SerializeField] private TextAsset npcSymptomeLinesXml;
+    [SerializeField] private TextAsset npcTraitFallbackLinesXml;
 
     [Header("NPC Settings")]
     [SerializeField] private int minAge = 18;
@@ -55,10 +56,12 @@ public class NPCGenerator : MonoBehaviour
 
     private NPCProblemCatalog problemCatalog;
     private NPCSymptomLinesCatalog symptomLinesCatalog;
+    private NPCTraitFallbackCatalog traitFallbackCatalog;
 
     public NPC GeneratedNpc => generatedNpc;
     public NPCProblemCatalog ProblemCatalog => problemCatalog;
     public NPCSymptomLinesCatalog SymptomLinesCatalog => symptomLinesCatalog;
+    public NPCTraitFallbackCatalog TraitFallbackCatalog => traitFallbackCatalog;
     public bool IsCatalogLoaded => problemCatalog != null;
 
     private void Awake()
@@ -73,6 +76,7 @@ public class NPCGenerator : MonoBehaviour
     public void LoadCatalog()
     {
         symptomLinesCatalog = null;
+        traitFallbackCatalog = null;
 
         if (npcProblemsXml == null)
         {
@@ -86,6 +90,11 @@ public class NPCGenerator : MonoBehaviour
         if (npcSymptomeLinesXml != null)
         {
             symptomLinesCatalog = NPCSymptomLinesLoader.Load(npcSymptomeLinesXml);
+        }
+
+        if (npcTraitFallbackLinesXml != null)
+        {
+            traitFallbackCatalog = NPCTraitFallbackLoader.Load(npcTraitFallbackLinesXml);
         }
     }
 
@@ -145,7 +154,7 @@ public class NPCGenerator : MonoBehaviour
     public string GetDialogueLine(NPC npc)
     {
         EnsureCatalogLoaded();
-        return NPCDialogueUtility.GetNextSymptomLine(npc, symptomLinesCatalog);
+        return NPCDialogueUtility.GetNextSymptomLine(npc, symptomLinesCatalog, traitFallbackCatalog);
     }
 
     private void EnsureCatalogLoaded()

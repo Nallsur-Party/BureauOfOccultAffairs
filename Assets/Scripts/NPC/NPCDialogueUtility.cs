@@ -3,27 +3,6 @@ using UnityEngine;
 
 public static class NPCDialogueUtility
 {
-    private static readonly string[] HonestFallbackLines =
-    {
-        "Я уже рассказал все, что могу вспомнить.",
-        "Это все, что я знаю. Не хочу выдумывать лишнее.",
-        "Больше ясных деталей у меня нет. Только тот же страх."
-    };
-
-    private static readonly string[] NeutralFallbackLines =
-    {
-        "Не уверен, что еще могу добавить.",
-        "Пока это все, что я могу рассказать.",
-        "Остальное расплывается. Я сам себе не доверяю."
-    };
-
-    private static readonly string[] LiarFallbackLines =
-    {
-        "На этом все. Больше говорить не о чем.",
-        "Ты и так знаешь достаточно.",
-        "Я бы предпочел остановиться на этом."
-    };
-
     public static NPCTraitType GetRandomTrait()
     {
         int traitCount = System.Enum.GetValues(typeof(NPCTraitType)).Length;
@@ -47,22 +26,21 @@ public static class NPCDialogueUtility
         }
     }
 
-    public static string GetFallbackLine(NPCTraitType trait)
+    public static string GetFallbackLine(NPCTraitType trait, NPCTraitFallbackCatalog fallbackCatalog)
     {
-        switch (trait)
+        if (fallbackCatalog != null && fallbackCatalog.TryGetLines(trait, out IReadOnlyList<string> lines) && lines.Count > 0)
         {
-            case NPCTraitType.Honest:
-                return HonestFallbackLines[Random.Range(0, HonestFallbackLines.Length)];
-
-            case NPCTraitType.Liar:
-                return LiarFallbackLines[Random.Range(0, LiarFallbackLines.Length)];
-
-            default:
-                return NeutralFallbackLines[Random.Range(0, NeutralFallbackLines.Length)];
+            return lines[Random.Range(0, lines.Count)];
         }
+
+        return "Мне больше нечего добавить.";
     }
 
-    public static string GetNextSymptomLine(NPC npc, NPCSymptomLinesCatalog symptomLinesCatalog)
+    public static string GetNextSymptomLine(
+        NPC npc,
+        NPCSymptomLinesCatalog symptomLinesCatalog,
+        NPCTraitFallbackCatalog fallbackCatalog
+    )
     {
         if (npc == null)
         {
@@ -76,7 +54,7 @@ public static class NPCDialogueUtility
 
         if (npc.RemainingTruthTokens <= 0 || symptomLinesCatalog == null)
         {
-            return GetFallbackLine(npc.Trait);
+            return GetFallbackLine(npc.Trait, fallbackCatalog);
         }
 
         List<int> candidateIndices = new List<int>();
@@ -96,7 +74,7 @@ public static class NPCDialogueUtility
 
         if (candidateIndices.Count == 0)
         {
-            return GetFallbackLine(npc.Trait);
+            return GetFallbackLine(npc.Trait, fallbackCatalog);
         }
 
         int symptomIndex = candidateIndices[Random.Range(0, candidateIndices.Count)];
@@ -104,7 +82,7 @@ public static class NPCDialogueUtility
 
         if (!symptomLinesCatalog.TryGetLines(symptomId, out IReadOnlyList<string> symptomLines) || symptomLines.Count == 0)
         {
-            return GetFallbackLine(npc.Trait);
+            return GetFallbackLine(npc.Trait, fallbackCatalog);
         }
 
         string selectedLine = symptomLines[Random.Range(0, symptomLines.Count)];
