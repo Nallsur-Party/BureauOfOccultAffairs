@@ -20,11 +20,15 @@ public class NPC
     [SerializeField] private List<string> symptomIds = new List<string>();
     [SerializeField] private List<string> symptoms = new List<string>();
     [SerializeField] private int truthTokens;
+    [SerializeField] private int followUpStoryTokens;
     [SerializeField] private int detectiveQuestionTokens;
-    [SerializeField] private List<string> revealedSymptomIds = new List<string>();
+    [SerializeField] private int spentDetectiveQuestionCount;
     [NonSerialized] private HashSet<NPCQuestionType> askedQuestionTypes = new HashSet<NPCQuestionType>();
     [NonSerialized] private Dictionary<NPCQuestionType, string> rememberedAnswers = new Dictionary<NPCQuestionType, string>();
-    [NonSerialized] private string lastStoryLine;
+    [NonSerialized] private HashSet<string> conversationLines = new HashSet<string>();
+    [NonSerialized] private HashSet<string> followUpLines = new HashSet<string>();
+    [NonSerialized] private List<string> conversationHistory = new List<string>();
+    [NonSerialized] private List<string> followUpHistory = new List<string>();
 
     public string Name => npcName;
     public GenderType Gender => gender;
@@ -34,7 +38,9 @@ public class NPC
     public IReadOnlyList<string> SymptomIds => symptomIds;
     public IReadOnlyList<string> Symptoms => symptoms;
     public int RemainingTruthTokens => truthTokens;
+    public int RemainingFollowUpStoryTokens => followUpStoryTokens;
     public int RemainingDetectiveQuestionTokens => detectiveQuestionTokens;
+    public int SpentDetectiveQuestionCount => spentDetectiveQuestionCount;
     public bool HasProblem => !string.IsNullOrWhiteSpace(problemName);
 
     public NPC(string npcName, GenderType gender, int age, NPCTraitType trait)
@@ -87,6 +93,7 @@ public class NPC
         }
 
         truthTokens = NPCDialogueUtility.CalculateTruthTokens(trait, symptomIds.Count);
+        followUpStoryTokens = NPCDialogueUtility.CalculateFollowUpStoryTokens(trait, symptomIds.Count);
         detectiveQuestionTokens = NPCDialogueUtility.CalculateDetectiveQuestionTokens(trait, symptomIds.Count);
     }
 
@@ -109,29 +116,14 @@ public class NPC
         ResetDialogueState();
     }
 
-    public bool HasRevealedSymptom(string symptomId)
-    {
-        if (string.IsNullOrWhiteSpace(symptomId))
-        {
-            return false;
-        }
-
-        return revealedSymptomIds.Contains(symptomId.Trim());
-    }
-
-    public void MarkSymptomRevealed(string symptomId)
-    {
-        if (string.IsNullOrWhiteSpace(symptomId) || HasRevealedSymptom(symptomId))
-        {
-            return;
-        }
-
-        revealedSymptomIds.Add(symptomId.Trim());
-    }
-
     public void ConsumeTruthToken()
     {
         truthTokens = Math.Max(0, truthTokens - 1);
+    }
+
+    public void ConsumeFollowUpStoryToken()
+    {
+        followUpStoryTokens = Math.Max(0, followUpStoryTokens - 1);
     }
 
     public bool HasSymptomId(string symptomId)
@@ -163,8 +155,7 @@ public class NPC
 
     public int GetRememberedQuestionCount()
     {
-        EnsureRuntimeState();
-        return askedQuestionTypes.Count;
+        return spentDetectiveQuestionCount;
     }
 
     public bool HasAskedQuestion(NPCQuestionType questionType)
@@ -182,27 +173,93 @@ public class NPC
     public void ConsumeDetectiveQuestionToken()
     {
         detectiveQuestionTokens = Math.Max(0, detectiveQuestionTokens - 1);
+        spentDetectiveQuestionCount++;
     }
 
-    public void SetLastStoryLine(string storyLine)
+    public bool HasToldConversationLine(string storyLine)
     {
-        lastStoryLine = string.IsNullOrWhiteSpace(storyLine) ? null : storyLine.Trim();
+        if (string.IsNullOrWhiteSpace(storyLine))
+        {
+            return false;
+        }
+
+        EnsureRuntimeState();
+        return conversationLines.Contains(storyLine.Trim());
     }
 
-    public string GetLastStoryLine()
+    public bool HasToldFollowUpLine(string storyLine)
     {
-        return lastStoryLine;
+        if (string.IsNullOrWhiteSpace(storyLine))
+        {
+            return false;
+        }
+
+        EnsureRuntimeState();
+        return followUpLines.Contains(storyLine.Trim());
+    }
+
+    public bool HasToldAnyLine(string storyLine)
+    {
+        return HasToldConversationLine(storyLine) || HasToldFollowUpLine(storyLine);
+    }
+
+    public void MarkConversationLineTold(string storyLine)
+    {
+        if (string.IsNullOrWhiteSpace(storyLine))
+        {
+            return;
+        }
+
+        EnsureRuntimeState();
+        string normalizedLine = storyLine.Trim();
+
+        if (conversationLines.Add(normalizedLine))
+        {
+            conversationHistory.Add(normalizedLine);
+        }
+    }
+
+    public void MarkFollowUpLineTold(string storyLine)
+    {
+        if (string.IsNullOrWhiteSpace(storyLine))
+        {
+            return;
+        }
+
+        EnsureRuntimeState();
+        string normalizedLine = storyLine.Trim();
+
+        if (followUpLines.Add(normalizedLine))
+        {
+            followUpHistory.Add(normalizedLine);
+        }
+    }
+
+    public IReadOnlyList<string> GetConversationHistory()
+    {
+        EnsureRuntimeState();
+        return conversationHistory;
+    }
+
+    public IReadOnlyList<string> GetFollowUpHistory()
+    {
+        EnsureRuntimeState();
+        return followUpHistory;
     }
 
     private void ResetDialogueState()
     {
         truthTokens = 0;
+        followUpStoryTokens = 0;
         detectiveQuestionTokens = 0;
-        revealedSymptomIds.Clear();
+        spentDetectiveQuestionCount = 0;
         EnsureRuntimeState();
         askedQuestionTypes.Clear();
         rememberedAnswers.Clear();
-        lastStoryLine = null;
+        conversationLines.Clear();
+        followUpLines.Clear();
+        conversationHistory.Clear();
+        followUpHistory.Clear();
     }
 
     private void EnsureRuntimeState()
@@ -215,6 +272,26 @@ public class NPC
         if (rememberedAnswers == null)
         {
             rememberedAnswers = new Dictionary<NPCQuestionType, string>();
+        }
+
+        if (conversationLines == null)
+        {
+            conversationLines = new HashSet<string>();
+        }
+
+        if (followUpLines == null)
+        {
+            followUpLines = new HashSet<string>();
+        }
+
+        if (conversationHistory == null)
+        {
+            conversationHistory = new List<string>();
+        }
+
+        if (followUpHistory == null)
+        {
+            followUpHistory = new List<string>();
         }
     }
 }

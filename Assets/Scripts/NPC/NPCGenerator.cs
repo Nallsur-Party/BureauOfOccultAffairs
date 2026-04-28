@@ -154,7 +154,7 @@ public class NPCGenerator : MonoBehaviour
     public string GetDialogueLine(NPC npc)
     {
         EnsureCatalogLoaded();
-        return NPCDialogueUtility.GetNextSymptomLine(npc, symptomLinesCatalog, traitFallbackCatalog);
+        return NPCDialogueUtility.GetDialogueLine(npc, symptomLinesCatalog, traitFallbackCatalog);
     }
 
     public string GetQuestionResponse(NPC npc, NPCQuestionType questionType, PlayerProfile playerProfile)

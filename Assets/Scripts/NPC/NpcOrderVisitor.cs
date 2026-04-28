@@ -97,12 +97,12 @@ public class NpcOrderVisitor : MonoBehaviour
         }
 
         string symptomsText = npcData.Symptoms.Count > 0
-            ? string.Join(", ", npcData.Symptoms)
+            ? BuildSymptomsDebugText()
             : "No symptoms";
         string problemText = npcData.HasProblem ? npcData.ProblemName : "No problem";
 
         Debug.Log(
-            $"NPC: {npcData.Name} | Gender: {npcData.Gender} | Age: {npcData.Age} | Trait: {npcData.Trait} | Problem: {problemText} | Symptoms: {symptomsText} | Tokens: {npcData.RemainingTruthTokens}",
+            $"NPC: {npcData.Name} | Gender: {npcData.Gender} | Age: {npcData.Age} | Trait: {npcData.Trait} | Problem: {problemText} | Symptoms: {symptomsText} | DialogueTokens: {npcData.RemainingTruthTokens} | FollowUpTokens: {npcData.RemainingFollowUpStoryTokens} | QuestionTokens: {npcData.RemainingDetectiveQuestionTokens}",
             this
         );
     }
@@ -138,7 +138,32 @@ public class NpcOrderVisitor : MonoBehaviour
             return "Говорить пока не о чем.";
         }
 
-        return npcGenerator.GetQuestionResponse(npcData, questionType, playerProfile);
+        string answer = npcGenerator.GetQuestionResponse(npcData, questionType, playerProfile);
+
+        Debug.Log(
+            $"NPC Question Debug | NPC: {npcData.Name} | Question: {questionType} | Answer: {answer} | DialogueTokens: {npcData.RemainingTruthTokens} | FollowUpTokens: {npcData.RemainingFollowUpStoryTokens} | QuestionTokens: {npcData.RemainingDetectiveQuestionTokens} | SpentQuestions: {npcData.SpentDetectiveQuestionCount}",
+            this
+        );
+
+        return answer;
+    }
+
+    private string BuildSymptomsDebugText()
+    {
+        if (npcData == null || npcData.SymptomIds.Count == 0 || npcData.Symptoms.Count == 0)
+        {
+            return "No symptoms";
+        }
+
+        int symptomCount = Mathf.Min(npcData.SymptomIds.Count, npcData.Symptoms.Count);
+        string[] symptomEntries = new string[symptomCount];
+
+        for (int i = 0; i < symptomCount; i++)
+        {
+            symptomEntries[i] = $"{npcData.SymptomIds[i]}: {npcData.Symptoms[i]}";
+        }
+
+        return string.Join(", ", symptomEntries);
     }
 
     private void Update()

@@ -3,6 +3,7 @@ using UnityEngine;
 
 public static class NPCDialogueUtility
 {
+    private const string MemoryGapSymptomId = "S1";
     private const string ConfusedDetailsSymptomId = "S4";
     private const string ContradictoryStorySymptomId = "S18";
 
@@ -23,6 +24,23 @@ public static class NPCDialogueUtility
 
             case NPCTraitType.Liar:
                 return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.35f));
+
+            default:
+                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.6f));
+        }
+    }
+
+    public static int CalculateFollowUpStoryTokens(NPCTraitType trait, int symptomCount)
+    {
+        int clampedSymptomCount = Mathf.Max(0, symptomCount);
+
+        switch (trait)
+        {
+            case NPCTraitType.Honest:
+                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.85f));
+
+            case NPCTraitType.Liar:
+                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.4f));
 
             default:
                 return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.6f));
@@ -56,7 +74,7 @@ public static class NPCDialogueUtility
         return "Я уже ответил на все, что готов сейчас рассказать.";
     }
 
-    public static string GetNextSymptomLine(
+    public static string GetDialogueLine(
         NPC npc,
         NPCSymptomLinesCatalog symptomLinesCatalog,
         NPCTraitFallbackCatalog fallbackCatalog
@@ -77,39 +95,12 @@ public static class NPCDialogueUtility
             return GetFallbackLine(npc.Trait, fallbackCatalog);
         }
 
-        List<int> candidateIndices = new List<int>();
-
-        for (int i = 0; i < npc.SymptomIds.Count; i++)
-        {
-            if (npc.HasRevealedSymptom(npc.SymptomIds[i]))
-            {
-                continue;
-            }
-
-            if (symptomLinesCatalog.TryGetLines(npc.SymptomIds[i], out IReadOnlyList<string> lines) && lines.Count > 0)
-            {
-                candidateIndices.Add(i);
-            }
-        }
-
-        if (candidateIndices.Count == 0)
+        if (!TryGetConversationLine(npc, symptomLinesCatalog, out string conversationLine))
         {
             return GetFallbackLine(npc.Trait, fallbackCatalog);
         }
 
-        int symptomIndex = candidateIndices[Random.Range(0, candidateIndices.Count)];
-        string symptomId = npc.SymptomIds[symptomIndex];
-
-        if (!symptomLinesCatalog.TryGetLines(symptomId, out IReadOnlyList<string> symptomLines) || symptomLines.Count == 0)
-        {
-            return GetFallbackLine(npc.Trait, fallbackCatalog);
-        }
-
-        string selectedLine = symptomLines[Random.Range(0, symptomLines.Count)];
-        npc.MarkSymptomRevealed(symptomId);
-        npc.ConsumeTruthToken();
-        npc.SetLastStoryLine(selectedLine);
-        return selectedLine;
+        return conversationLine;
     }
 
     public static string GetQuestionResponse(
@@ -125,43 +116,32 @@ public static class NPCDialogueUtility
             return "Сначала нужно найти собеседника.";
         }
 
-        bool canRepeatDifferently = CanVaryRepeatedQuestion(npc, questionType);
+        if (questionType == NPCQuestionType.AnotherStory)
+        {
+            return GetAnotherStoryQuestionResponse(npc, playerProfile, symptomLinesCatalog, fallbackCatalog);
+        }
 
-        if (!canRepeatDifferently && npc.HasRememberedAnswer(questionType, out string rememberedAnswer))
+        if (npc.HasRememberedAnswer(questionType, out string rememberedAnswer))
         {
             return rememberedAnswer;
         }
 
-        bool isNewQuestion = !npc.HasAskedQuestion(questionType);
         int playerQuestionLimit = playerProfile != null ? playerProfile.InterrogationLimit : 1;
 
-        if (isNewQuestion)
+        if (npc.GetRememberedQuestionCount() >= playerQuestionLimit || npc.RemainingDetectiveQuestionTokens <= 0)
         {
-            if (npc.GetRememberedQuestionCount() >= playerQuestionLimit || npc.RemainingDetectiveQuestionTokens <= 0)
-            {
-                return GetQuestionLimitLine();
-            }
-
-            npc.MarkQuestionAsked(questionType);
-            npc.ConsumeDetectiveQuestionToken();
+            return GetQuestionLimitLine();
         }
 
-        string answer = BuildQuestionAnswer(npc, questionType, symptomLinesCatalog, fallbackCatalog);
+        npc.MarkQuestionAsked(questionType);
+        npc.ConsumeDetectiveQuestionToken();
 
-        if (!canRepeatDifferently)
-        {
-            npc.RememberAnswer(questionType, answer);
-        }
-
+        string answer = BuildQuestionAnswer(npc, questionType);
+        npc.RememberAnswer(questionType, answer);
         return answer;
     }
 
-    private static string BuildQuestionAnswer(
-        NPC npc,
-        NPCQuestionType questionType,
-        NPCSymptomLinesCatalog symptomLinesCatalog,
-        NPCTraitFallbackCatalog fallbackCatalog
-    )
+    private static string BuildQuestionAnswer(NPC npc, NPCQuestionType questionType)
     {
         switch (questionType)
         {
@@ -178,42 +158,211 @@ public static class NPCDialogueUtility
             case NPCQuestionType.Age:
                 return $"Мне {npc.Age}.";
 
-            case NPCQuestionType.AnotherStory:
-                return GetAnotherStoryAnswer(npc, symptomLinesCatalog, fallbackCatalog);
-
             default:
                 return "Не понимаю, о чем именно вы спрашиваете.";
         }
     }
 
-    private static string GetAnotherStoryAnswer(
+    private static string GetAnotherStoryQuestionResponse(
         NPC npc,
+        PlayerProfile playerProfile,
         NPCSymptomLinesCatalog symptomLinesCatalog,
         NPCTraitFallbackCatalog fallbackCatalog
     )
     {
-        string lastStoryLine = npc.GetLastStoryLine();
-
-        if (!CanVaryRepeatedQuestion(npc, NPCQuestionType.AnotherStory) && !string.IsNullOrWhiteSpace(lastStoryLine))
+        if (npc == null)
         {
-            return lastStoryLine;
+            return "Сначала нужно найти собеседника.";
         }
 
-        if (npc.RemainingTruthTokens > 0 && symptomLinesCatalog != null)
+        if (npc.RemainingFollowUpStoryTokens > 0
+            && symptomLinesCatalog != null
+            && TryGetFollowUpLine(npc, symptomLinesCatalog, out string followUpLine))
         {
-            return GetNextSymptomLine(npc, symptomLinesCatalog, fallbackCatalog);
+            int playerQuestionLimit = playerProfile != null ? playerProfile.InterrogationLimit : 1;
+
+            if (npc.GetRememberedQuestionCount() >= playerQuestionLimit || npc.RemainingDetectiveQuestionTokens <= 0)
+            {
+                return GetQuestionLimitLine();
+            }
+
+            npc.MarkQuestionAsked(NPCQuestionType.AnotherStory);
+            npc.ConsumeDetectiveQuestionToken();
+            npc.ConsumeFollowUpStoryToken();
+            npc.MarkFollowUpLineTold(followUpLine);
+            return followUpLine;
+        }
+
+        string repeatedMemoryLine = TryGetMemoryGapRepeat(npc);
+
+        if (!string.IsNullOrWhiteSpace(repeatedMemoryLine))
+        {
+            return repeatedMemoryLine;
+        }
+
+        if (CanVaryFollowUpLine(npc)
+            && symptomLinesCatalog != null
+            && TryGetUnstableFollowUpLine(npc, symptomLinesCatalog, out string unstableLine))
+        {
+            return unstableLine;
         }
 
         return GetFallbackLine(npc.Trait, fallbackCatalog);
     }
 
-    private static bool CanVaryRepeatedQuestion(NPC npc, NPCQuestionType questionType)
+    private static bool TryGetConversationLine(NPC npc, NPCSymptomLinesCatalog symptomLinesCatalog, out string selectedLine)
     {
-        if (npc == null || questionType != NPCQuestionType.AnotherStory)
+        return TryGetCandidateLine(
+            npc,
+            symptomLinesCatalog,
+            excludeConversationLines: true,
+            excludeFollowUpLines: false,
+            allowAnyKnownLines: false,
+            out selectedLine
+        ) && MarkConversationLine(npc, selectedLine);
+    }
+
+    private static bool TryGetFollowUpLine(NPC npc, NPCSymptomLinesCatalog symptomLinesCatalog, out string selectedLine)
+    {
+        return TryGetCandidateLine(
+            npc,
+            symptomLinesCatalog,
+            excludeConversationLines: true,
+            excludeFollowUpLines: true,
+            allowAnyKnownLines: false,
+            out selectedLine
+        );
+    }
+
+    private static bool TryGetUnstableFollowUpLine(NPC npc, NPCSymptomLinesCatalog symptomLinesCatalog, out string selectedLine)
+    {
+        return TryGetCandidateLine(
+            npc,
+            symptomLinesCatalog,
+            excludeConversationLines: false,
+            excludeFollowUpLines: false,
+            allowAnyKnownLines: true,
+            out selectedLine
+        );
+    }
+
+    private static bool TryGetCandidateLine(
+        NPC npc,
+        NPCSymptomLinesCatalog symptomLinesCatalog,
+        bool excludeConversationLines,
+        bool excludeFollowUpLines,
+        bool allowAnyKnownLines,
+        out string selectedLine)
+    {
+        selectedLine = null;
+
+        if (npc == null || symptomLinesCatalog == null)
         {
             return false;
         }
 
-        return npc.HasSymptomId(ConfusedDetailsSymptomId) || npc.HasSymptomId(ContradictoryStorySymptomId);
+        List<string> candidateLines = new List<string>();
+
+        for (int i = 0; i < npc.SymptomIds.Count; i++)
+        {
+            if (!symptomLinesCatalog.TryGetLines(npc.SymptomIds[i], out IReadOnlyList<string> symptomLines) || symptomLines.Count == 0)
+            {
+                continue;
+            }
+
+            for (int lineIndex = 0; lineIndex < symptomLines.Count; lineIndex++)
+            {
+                string line = symptomLines[lineIndex];
+
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                bool wasInConversation = npc.HasToldConversationLine(line);
+                bool wasInFollowUp = npc.HasToldFollowUpLine(line);
+
+                if (!allowAnyKnownLines)
+                {
+                    if (excludeConversationLines && wasInConversation)
+                    {
+                        continue;
+                    }
+
+                    if (excludeFollowUpLines && wasInFollowUp)
+                    {
+                        continue;
+                    }
+                }
+
+                candidateLines.Add(line);
+            }
+        }
+
+        if (candidateLines.Count == 0)
+        {
+            return false;
+        }
+
+        selectedLine = candidateLines[Random.Range(0, candidateLines.Count)];
+        return true;
+    }
+
+    private static bool MarkConversationLine(NPC npc, string line)
+    {
+        if (npc == null || string.IsNullOrWhiteSpace(line))
+        {
+            return false;
+        }
+
+        if (npc.HasToldConversationLine(line))
+        {
+            return false;
+        }
+
+        npc.ConsumeTruthToken();
+        npc.MarkConversationLineTold(line);
+        return true;
+    }
+
+    private static string TryGetMemoryGapRepeat(NPC npc)
+    {
+        if (npc == null || !npc.HasSymptomId(MemoryGapSymptomId))
+        {
+            return null;
+        }
+
+        List<string> knownLines = new List<string>();
+        IReadOnlyList<string> conversationHistory = npc.GetConversationHistory();
+        IReadOnlyList<string> followUpHistory = npc.GetFollowUpHistory();
+
+        for (int i = 0; i < conversationHistory.Count; i++)
+        {
+            if (!string.IsNullOrWhiteSpace(conversationHistory[i]))
+            {
+                knownLines.Add(conversationHistory[i]);
+            }
+        }
+
+        for (int i = 0; i < followUpHistory.Count; i++)
+        {
+            if (!string.IsNullOrWhiteSpace(followUpHistory[i]))
+            {
+                knownLines.Add(followUpHistory[i]);
+            }
+        }
+
+        if (knownLines.Count == 0)
+        {
+            return null;
+        }
+
+        return knownLines[Random.Range(0, knownLines.Count)];
+    }
+
+    private static bool CanVaryFollowUpLine(NPC npc)
+    {
+        return npc != null
+            && (npc.HasSymptomId(ConfusedDetailsSymptomId) || npc.HasSymptomId(ContradictoryStorySymptomId));
     }
 }
