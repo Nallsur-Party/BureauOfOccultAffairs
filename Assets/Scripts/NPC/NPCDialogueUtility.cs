@@ -90,12 +90,12 @@ public static class NPCDialogueUtility
             return "Ничего странного со мной вроде бы не происходит.";
         }
 
-        if (npc.RemainingTruthTokens <= 0 || symptomLinesCatalog == null)
+        if (npc.RemainingTruthTokens <= 0 || npc.PreparedConversationLines.Count == 0)
         {
             return GetFallbackLine(npc.Trait, fallbackCatalog);
         }
 
-        if (!TryGetConversationLine(npc, symptomLinesCatalog, out string conversationLine))
+        if (!TryGetPreparedConversationLine(npc, out string conversationLine))
         {
             return GetFallbackLine(npc.Trait, fallbackCatalog);
         }
@@ -175,6 +175,35 @@ public static class NPCDialogueUtility
             return "Сначала нужно найти собеседника.";
         }
 
+        string repeatedConversationLine = TryGetMemoryGapConversationLine(npc);
+
+        if (!string.IsNullOrWhiteSpace(repeatedConversationLine))
+        {
+            return repeatedConversationLine;
+        }
+
+        if (npc.HasSymptomId(MemoryGapSymptomId))
+        {
+            return GetFallbackLine(npc.Trait, fallbackCatalog);
+        }
+
+        if (CanVaryFollowUpLine(npc)
+            && symptomLinesCatalog != null
+            && TryGetContradictoryFollowUpLine(npc, symptomLinesCatalog, out string unstableLine))
+        {
+            int playerQuestionLimit = playerProfile != null ? playerProfile.InterrogationLimit : 1;
+
+            if (npc.GetRememberedQuestionCount() >= playerQuestionLimit || npc.RemainingDetectiveQuestionTokens <= 0)
+            {
+                return GetQuestionLimitLine();
+            }
+
+            npc.MarkQuestionAsked(NPCQuestionType.AnotherStory);
+            npc.ConsumeDetectiveQuestionToken();
+            npc.MarkFollowUpLineTold(unstableLine);
+            return unstableLine;
+        }
+
         if (npc.RemainingFollowUpStoryTokens > 0
             && symptomLinesCatalog != null
             && TryGetFollowUpLine(npc, symptomLinesCatalog, out string followUpLine))
@@ -193,33 +222,39 @@ public static class NPCDialogueUtility
             return followUpLine;
         }
 
-        string repeatedMemoryLine = TryGetMemoryGapRepeat(npc);
-
-        if (!string.IsNullOrWhiteSpace(repeatedMemoryLine))
-        {
-            return repeatedMemoryLine;
-        }
-
-        if (CanVaryFollowUpLine(npc)
-            && symptomLinesCatalog != null
-            && TryGetUnstableFollowUpLine(npc, symptomLinesCatalog, out string unstableLine))
-        {
-            return unstableLine;
-        }
-
         return GetFallbackLine(npc.Trait, fallbackCatalog);
     }
 
-    private static bool TryGetConversationLine(NPC npc, NPCSymptomLinesCatalog symptomLinesCatalog, out string selectedLine)
+    private static bool TryGetPreparedConversationLine(NPC npc, out string selectedLine)
     {
-        return TryGetCandidateLine(
-            npc,
-            symptomLinesCatalog,
-            excludeConversationLines: true,
-            excludeFollowUpLines: false,
-            allowAnyKnownLines: false,
-            out selectedLine
-        ) && MarkConversationLine(npc, selectedLine);
+        selectedLine = null;
+
+        if (npc == null || npc.PreparedConversationLines.Count == 0)
+        {
+            return false;
+        }
+
+        List<string> candidateLines = new List<string>();
+
+        for (int i = 0; i < npc.PreparedConversationLines.Count; i++)
+        {
+            string line = npc.PreparedConversationLines[i];
+
+            if (string.IsNullOrWhiteSpace(line) || npc.HasToldConversationLine(line))
+            {
+                continue;
+            }
+
+            candidateLines.Add(line);
+        }
+
+        if (candidateLines.Count == 0)
+        {
+            return false;
+        }
+
+        selectedLine = candidateLines[Random.Range(0, candidateLines.Count)];
+        return MarkConversationLine(npc, selectedLine);
     }
 
     private static bool TryGetFollowUpLine(NPC npc, NPCSymptomLinesCatalog symptomLinesCatalog, out string selectedLine)
@@ -230,18 +265,6 @@ public static class NPCDialogueUtility
             excludeConversationLines: true,
             excludeFollowUpLines: true,
             allowAnyKnownLines: false,
-            out selectedLine
-        );
-    }
-
-    private static bool TryGetUnstableFollowUpLine(NPC npc, NPCSymptomLinesCatalog symptomLinesCatalog, out string selectedLine)
-    {
-        return TryGetCandidateLine(
-            npc,
-            symptomLinesCatalog,
-            excludeConversationLines: false,
-            excludeFollowUpLines: false,
-            allowAnyKnownLines: true,
             out selectedLine
         );
     }
@@ -325,44 +348,74 @@ public static class NPCDialogueUtility
         return true;
     }
 
-    private static string TryGetMemoryGapRepeat(NPC npc)
+    private static string TryGetMemoryGapConversationLine(NPC npc)
     {
         if (npc == null || !npc.HasSymptomId(MemoryGapSymptomId))
         {
             return null;
         }
 
-        List<string> knownLines = new List<string>();
-        IReadOnlyList<string> conversationHistory = npc.GetConversationHistory();
-        IReadOnlyList<string> followUpHistory = npc.GetFollowUpHistory();
-
-        for (int i = 0; i < conversationHistory.Count; i++)
-        {
-            if (!string.IsNullOrWhiteSpace(conversationHistory[i]))
-            {
-                knownLines.Add(conversationHistory[i]);
-            }
-        }
-
-        for (int i = 0; i < followUpHistory.Count; i++)
-        {
-            if (!string.IsNullOrWhiteSpace(followUpHistory[i]))
-            {
-                knownLines.Add(followUpHistory[i]);
-            }
-        }
-
-        if (knownLines.Count == 0)
+        if (npc.PreparedConversationLines.Count == 0)
         {
             return null;
         }
 
-        return knownLines[Random.Range(0, knownLines.Count)];
+        return npc.PreparedConversationLines[Random.Range(0, npc.PreparedConversationLines.Count)];
     }
 
     private static bool CanVaryFollowUpLine(NPC npc)
     {
         return npc != null
             && (npc.HasSymptomId(ConfusedDetailsSymptomId) || npc.HasSymptomId(ContradictoryStorySymptomId));
+    }
+
+    private static bool TryGetContradictoryFollowUpLine(
+        NPC npc,
+        NPCSymptomLinesCatalog symptomLinesCatalog,
+        out string selectedLine)
+    {
+        selectedLine = null;
+
+        if (npc == null || symptomLinesCatalog == null || symptomLinesCatalog.SymptomIds.Count == 0)
+        {
+            return false;
+        }
+
+        List<string> contradictoryLines = new List<string>();
+
+        for (int i = 0; i < symptomLinesCatalog.SymptomIds.Count; i++)
+        {
+            string symptomId = symptomLinesCatalog.SymptomIds[i];
+
+            if (npc.HasSymptomId(symptomId))
+            {
+                continue;
+            }
+
+            if (!symptomLinesCatalog.TryGetLines(symptomId, out IReadOnlyList<string> symptomLines) || symptomLines.Count == 0)
+            {
+                continue;
+            }
+
+            for (int lineIndex = 0; lineIndex < symptomLines.Count; lineIndex++)
+            {
+                string line = symptomLines[lineIndex];
+
+                if (string.IsNullOrWhiteSpace(line) || npc.HasToldAnyLine(line))
+                {
+                    continue;
+                }
+
+                contradictoryLines.Add(line);
+            }
+        }
+
+        if (contradictoryLines.Count == 0)
+        {
+            return false;
+        }
+
+        selectedLine = contradictoryLines[Random.Range(0, contradictoryLines.Count)];
+        return true;
     }
 }

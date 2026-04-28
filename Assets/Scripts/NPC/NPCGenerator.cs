@@ -117,6 +117,7 @@ public class NPCGenerator : MonoBehaviour
 
         NPCProblemDefinition problem = problemCatalog.Problems[UnityEngine.Random.Range(0, problemCatalog.Problems.Count)];
         generatedNpc.SetProblem(problem);
+        generatedNpc.SetPreparedConversationLines(BuildPreparedConversationLines(generatedNpc));
     }
 
     public NPC CreateNpc(string npcName, NPC.GenderType gender, int age, string problemName = null)
@@ -133,6 +134,7 @@ public class NPCGenerator : MonoBehaviour
         if (problemCatalog != null && problemCatalog.TryGetProblem(problemName, out NPCProblemDefinition problem))
         {
             npc.SetProblem(problem);
+            npc.SetPreparedConversationLines(BuildPreparedConversationLines(npc));
         }
 
         return npc;
@@ -175,6 +177,49 @@ public class NPCGenerator : MonoBehaviour
         {
             LoadCatalog();
         }
+    }
+
+    private List<string> BuildPreparedConversationLines(NPC npc)
+    {
+        List<string> preparedLines = new List<string>();
+
+        if (npc == null || symptomLinesCatalog == null || npc.SymptomIds.Count == 0)
+        {
+            return preparedLines;
+        }
+
+        List<string> candidateLines = new List<string>();
+
+        for (int i = 0; i < npc.SymptomIds.Count; i++)
+        {
+            if (!symptomLinesCatalog.TryGetLines(npc.SymptomIds[i], out IReadOnlyList<string> symptomLines) || symptomLines.Count == 0)
+            {
+                continue;
+            }
+
+            for (int lineIndex = 0; lineIndex < symptomLines.Count; lineIndex++)
+            {
+                string line = symptomLines[lineIndex];
+
+                if (string.IsNullOrWhiteSpace(line) || candidateLines.Contains(line))
+                {
+                    continue;
+                }
+
+                candidateLines.Add(line);
+            }
+        }
+
+        int preparedCount = Mathf.Min(npc.RemainingTruthTokens, candidateLines.Count);
+
+        for (int i = 0; i < preparedCount; i++)
+        {
+            int selectedIndex = UnityEngine.Random.Range(0, candidateLines.Count);
+            preparedLines.Add(candidateLines[selectedIndex]);
+            candidateLines.RemoveAt(selectedIndex);
+        }
+
+        return preparedLines;
     }
 
     private static NPC.GenderType GetRandomGender()
