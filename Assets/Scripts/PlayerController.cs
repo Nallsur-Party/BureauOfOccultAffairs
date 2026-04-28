@@ -4,6 +4,8 @@ using TMPro;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
+    private static readonly int SpeedHash = Animator.StringToHash("speed");
+
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float jumpForce = 7f;
@@ -20,6 +22,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Visual")]
     [SerializeField] private Transform visualRoot;
+    [SerializeField] private Animator animator;
 
     [Header("Interaction")]
     [SerializeField] private float interactionRadius = 1.5f;
@@ -70,6 +73,7 @@ public class PlayerController : MonoBehaviour
 
         UpdateGroundedState();
         UpdateFacing();
+        UpdateAnimator();
         SetInteractionPromptVisible(currentInteractableNpc != null);
 
         if (currentInteractableNpc == null)
@@ -164,6 +168,18 @@ public class PlayerController : MonoBehaviour
         {
             SetFacingRight(false);
         }
+    }
+
+    private void UpdateAnimator()
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        Vector3 velocity = rb != null ? rb.velocity : Vector3.zero;
+        float planarSpeed = new Vector2(velocity.x, velocity.z).magnitude;
+        animator.SetFloat(SpeedHash, planarSpeed);
     }
 
     private void SetFacingRight(bool facingRight)
