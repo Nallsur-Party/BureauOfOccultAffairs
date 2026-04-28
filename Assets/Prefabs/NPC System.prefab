@@ -45,6 +45,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   npcProblemsXml: {fileID: 4900000, guid: 3aead19fd5a76af47b32842ca7931c92, type: 3}
+  npcSymptomeLinesXml: {fileID: 4900000, guid: f17ece05ab0cf4b4bba07e2240a2bc56, type: 3}
   minAge: 18
   maxAge: 65
   noProblemChance: 0.15
@@ -66,9 +67,13 @@ MonoBehaviour:
     npcName: "\u0422\u0440\u0430\u043D\u0441\u0418\u0433\u043D\u0430\u0442"
     gender: 2
     age: 58
+    trait: 0
     problemName: "\u041F\u0440\u0435\u0434\u043C\u0435\u0442\u043D\u043E\u0435 \u043F\u0440\u043E\u043A\u043B\u044F\u0442\u0438\u0435"
+    symptomIds: []
     symptoms:
     - "\u0421\u0432\u044F\u0437\u0430\u043D \u0441 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u043C"
     - "\u041D\u0435 \u0445\u043E\u0447\u0435\u0442 \u043E\u0442\u0434\u0430\u0432\u0430\u0442\u044C
       \u0432\u0435\u0449\u044C"
     - "\u0421\u0442\u0440\u0430\u043D\u043D\u044B\u0435 \u0441\u043E\u0432\u043F\u0430\u0434\u0435\u043D\u0438\u044F"
+    truthTokens: 0
+    revealedSymptomIds: []

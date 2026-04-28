@@ -102,7 +102,7 @@ public class NpcOrderVisitor : MonoBehaviour
         string problemText = npcData.HasProblem ? npcData.ProblemName : "No problem";
 
         Debug.Log(
-            $"NPC: {npcData.Name} | Gender: {npcData.Gender} | Age: {npcData.Age} | Problem: {problemText} | Symptoms: {symptomsText}",
+            $"NPC: {npcData.Name} | Gender: {npcData.Gender} | Age: {npcData.Age} | Trait: {npcData.Trait} | Problem: {problemText} | Symptoms: {symptomsText} | Tokens: {npcData.RemainingTruthTokens}",
             this
         );
     }
@@ -114,12 +114,16 @@ public class NpcOrderVisitor : MonoBehaviour
             return "NPC data has not been generated yet.";
         }
 
-        string problemText = npcData.HasProblem ? npcData.ProblemName : "Ничего странного не замечено";
-        string symptomsText = npcData.Symptoms.Count > 0
-            ? string.Join(", ", npcData.Symptoms)
-            : "Симптомов нет";
+        string dialogueLine = npcGenerator != null
+            ? npcGenerator.GetDialogueLine(npcData)
+            : null;
 
-        return $"{npcData.Name}, {npcData.Age}\nПроблема: {problemText}\nСимптомы: {symptomsText}";
+        if (string.IsNullOrWhiteSpace(dialogueLine))
+        {
+            dialogueLine = "Мне нечего сказать.";
+        }
+
+        return $"{npcData.Name}, {npcData.Age}\n{dialogueLine}";
     }
 
     private void Update()

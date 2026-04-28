@@ -44,6 +44,7 @@ GameObject:
   - component: {fileID: 3774054118291913560}
   - component: {fileID: 1837189754051344775}
   - component: {fileID: 5112496190937396943}
+  - component: {fileID: 7578609196619244046}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -194,7 +195,33 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   visualRoot: {fileID: 0}
+  animator: {fileID: 7578609196619244046}
   interactionRadius: 1.5
   interactionMask:
     serializedVersion: 2
     m_Bits: 64
+  interactionPrompt: {fileID: 0}
+  dialogueWindow: {fileID: 0}
+  dialogueText: {fileID: 0}
+  dialogueHideDelay: 2
+--- !u!95 &7578609196619244046
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9175066928066003693}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 6747b445c0fd1b341a9a7c7c94571d53, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
