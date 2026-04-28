@@ -1059,6 +1059,18 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1082817212}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1129110258 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6380206237659848771, guid: d481733bff90832419fd7d5445713bb5,
+    type: 3}
+  m_PrefabInstance: {fileID: 2587487809545045965}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89aabc0e7a38d3b4a9a561418f0b3b4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1215195105
 GameObject:
   m_ObjectHideFlags: 0
@@ -2426,6 +2438,11 @@ PrefabInstance:
       propertyPath: counterPoint
       value: 
       objectReference: {fileID: 921714267}
+    - target: {fileID: 3728247049770033207, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+        type: 3}
+      propertyPath: npcGenerator
+      value: 
+      objectReference: {fileID: 1129110258}
     - target: {fileID: 3728247049770033207, guid: 12ce90bdcae983f418ccea3e8573a6a1,
         type: 3}
       propertyPath: exitPoints.Array.data[0]

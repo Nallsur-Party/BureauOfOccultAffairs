@@ -11,6 +11,15 @@ public class NpcOrderVisitor : MonoBehaviour
         Leaving
     }
 
+    private static readonly int SpeedHash = Animator.StringToHash("speed");
+    private static readonly int SpeedXHash = Animator.StringToHash("speedX");
+    private static readonly int SpeedZHash = Animator.StringToHash("speedZ");
+    private static readonly int IsMovingForwardHash = Animator.StringToHash("isMovingForward");
+    private static readonly int IsMovingBackwardHash = Animator.StringToHash("isMovingBackward");
+    private static readonly int IsLookingDownHash = Animator.StringToHash("isLookingDown");
+    private static readonly int IsLookingHorizontalHash = Animator.StringToHash("isLookingHorizontal");
+    private static readonly int IsPlayerNearHash = Animator.StringToHash("isPlayerNear");
+
     [Header("Route")]
     [SerializeField] private Transform startPoint;
     [SerializeField] private Transform counterPoint;
@@ -26,6 +35,9 @@ public class NpcOrderVisitor : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private bool invertFlipX;
+    [SerializeField] private bool facesRightByDefault = true;
+    [SerializeField] private Animator animator;
+    [SerializeField] private float lookAtPlayerRadius = 2f;
 
     [Header("NPC Data")]
     [SerializeField] private NPCGenerator npcGenerator;
@@ -39,6 +51,8 @@ public class NpcOrderVisitor : MonoBehaviour
 
     private VisitorState currentState = VisitorState.Idle;
     private Transform currentTarget;
+    private Vector3 lastFrameVelocity = Vector3.zero;
+    private PlayerController playerController;
 
     public bool IsWaitingAtCounter => currentState == VisitorState.WaitingAtCounter;
     public NPC NpcData => npcData;
@@ -48,6 +62,16 @@ public class NpcOrderVisitor : MonoBehaviour
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+
+        if (playerController == null)
+        {
+            playerController = FindObjectOfType<PlayerController>();
         }
 
         if (npcGenerator == null)
@@ -178,6 +202,8 @@ public class NpcOrderVisitor : MonoBehaviour
     {
         if (currentTarget == null)
         {
+            lastFrameVelocity = Vector3.zero;
+            UpdateAnimator();
             return;
         }
 
@@ -186,7 +212,9 @@ public class NpcOrderVisitor : MonoBehaviour
         Vector3 delta = nextPosition - transform.position;
 
         transform.position = nextPosition;
+        lastFrameVelocity = delta / Time.deltaTime;
         UpdateFacing(delta);
+        UpdateAnimator();
 
         if (Vector3.Distance(transform.position, targetPosition) <= stoppingDistance)
         {
@@ -267,7 +295,92 @@ public class NpcOrderVisitor : MonoBehaviour
         }
 
         bool movingRight = delta.x > 0f;
-        spriteRenderer.flipX = invertFlipX ? movingRight : !movingRight;
+        bool shouldFaceRight = movingRight;
+
+        if (invertFlipX)
+        {
+            shouldFaceRight = !shouldFaceRight;
+        }
+
+        if (facesRightByDefault)
+        {
+            spriteRenderer.flipX = !shouldFaceRight;
+        }
+        else
+        {
+            spriteRenderer.flipX = shouldFaceRight;
+        }
+    }
+
+    private void UpdateAnimator()
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        Vector3 localVelocity = transform.InverseTransformDirection(lastFrameVelocity);
+        float planarSpeed = new Vector2(lastFrameVelocity.x, lastFrameVelocity.z).magnitude;
+        float speedX = Mathf.Abs(localVelocity.x);
+        float speedZ = localVelocity.z;
+        bool isMovingForward = speedZ >= speedX;
+        bool isMovingBackward = speedZ <= -speedX;
+
+        bool isLookingDown = false;
+        bool isLookingHorizontal = false;
+        bool isPlayerNear = false;
+        if (playerController != null)
+        {
+            Vector3 playerPosition = playerController.transform.position;
+            float distanceToPlayer = Vector3.Distance(transform.position, playerPosition);
+            isPlayerNear = distanceToPlayer <= lookAtPlayerRadius;
+            if (isPlayerNear)
+            {
+                Vector3 localDirection = transform.InverseTransformDirection((playerPosition - transform.position).normalized);
+                float angle = Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg;
+
+                // Горизонтальный сектор примерно 45…135 градусов в боковых четвертях
+                isLookingHorizontal = Mathf.Abs(angle) >= 45f && Mathf.Abs(angle) <= 135f;
+                // Если игрок ниже и не в боковой области, считаем взгляд вниз
+                isLookingDown = playerPosition.z < transform.position.z && !isLookingHorizontal;
+                // Флипим спрайт в зависимости от X позиции игрока
+                UpdateLookDirection();
+            }
+        }
+
+        animator.SetFloat(SpeedHash, planarSpeed);
+        animator.SetFloat(SpeedXHash, speedX);
+        animator.SetFloat(SpeedZHash, speedZ);
+        animator.SetBool(IsMovingForwardHash, isMovingForward);
+        animator.SetBool(IsMovingBackwardHash, isMovingBackward);
+        animator.SetBool(IsLookingDownHash, isLookingDown);
+        animator.SetBool(IsLookingHorizontalHash, isLookingHorizontal);
+        animator.SetBool(IsPlayerNearHash, isPlayerNear);
+    }
+
+    private void UpdateLookDirection()
+    {
+        if (playerController == null || spriteRenderer == null)
+        {
+            return;
+        }
+
+        bool playerIsToRight = playerController.transform.position.x > transform.position.x;
+        bool shouldFaceRight = playerIsToRight;
+
+        if (invertFlipX)
+        {
+            shouldFaceRight = !shouldFaceRight;
+        }
+
+        if (facesRightByDefault)
+        {
+            spriteRenderer.flipX = !shouldFaceRight;
+        }
+        else
+        {
+            spriteRenderer.flipX = shouldFaceRight;
+        }
     }
 
     private void OnDrawGizmosSelected()
@@ -298,5 +411,8 @@ public class NpcOrderVisitor : MonoBehaviour
                 Gizmos.DrawWireSphere(exitPoints[i].position, 0.15f);
             }
         }
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(transform.position, lookAtPlayerRadius);
     }
 }
