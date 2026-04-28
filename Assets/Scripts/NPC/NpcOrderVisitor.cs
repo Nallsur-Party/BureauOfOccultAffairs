@@ -334,7 +334,8 @@ public class NpcOrderVisitor : MonoBehaviour
             Vector3 playerPosition = playerController.transform.position;
             float distanceToPlayer = Vector3.Distance(transform.position, playerPosition);
             isPlayerNear = distanceToPlayer <= lookAtPlayerRadius;
-            if (isPlayerNear)
+            bool canLookAtPlayer = isPlayerNear && currentState == VisitorState.WaitingAtCounter;
+            if (canLookAtPlayer)
             {
                 Vector3 localDirection = transform.InverseTransformDirection((playerPosition - transform.position).normalized);
                 float angle = Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg;
@@ -343,7 +344,7 @@ public class NpcOrderVisitor : MonoBehaviour
                 isLookingHorizontal = Mathf.Abs(angle) >= 45f && Mathf.Abs(angle) <= 135f;
                 // Если игрок ниже и не в боковой области, считаем взгляд вниз
                 isLookingDown = playerPosition.z < transform.position.z && !isLookingHorizontal;
-                // Флипим спрайт в зависимости от X позиции игрока
+                // Флипим спрайт в зависимости от X позиции игрока только если NPC на стойке
                 UpdateLookDirection();
             }
         }

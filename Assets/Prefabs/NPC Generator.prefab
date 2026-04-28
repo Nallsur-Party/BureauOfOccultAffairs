@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7181312806285078053}
   - component: {fileID: 6380206237659848771}
   m_Layer: 0
-  m_Name: NPC System
+  m_Name: NPC Generator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

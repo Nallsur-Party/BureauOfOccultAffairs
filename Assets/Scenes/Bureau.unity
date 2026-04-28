@@ -2059,7 +2059,7 @@ PrefabInstance:
     - target: {fileID: 1668305320217490482, guid: d481733bff90832419fd7d5445713bb5,
         type: 3}
       propertyPath: m_Name
-      value: NPC System
+      value: NPC Generator
       objectReference: {fileID: 0}
     - target: {fileID: 7181312806285078053, guid: d481733bff90832419fd7d5445713bb5,
         type: 3}
