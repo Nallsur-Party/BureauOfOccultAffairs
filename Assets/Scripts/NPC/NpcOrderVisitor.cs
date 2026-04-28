@@ -96,15 +96,8 @@ public class NpcOrderVisitor : MonoBehaviour
             return;
         }
 
-        string symptomsText = npcData.Symptoms.Count > 0
-            ? BuildSymptomsDebugText()
-            : "No symptoms";
-        string problemText = npcData.HasProblem ? npcData.ProblemName : "No problem";
-
-        Debug.Log(
-            $"NPC: {npcData.Name} | Gender: {npcData.Gender} | Age: {npcData.Age} | Trait: {npcData.Trait} | Problem: {problemText} | Symptoms: {symptomsText} | TruthTokens: {npcData.RemainingTruthTokens} | LieTokens: {npcData.RemainingLieTokens} | FollowUpTokens: {npcData.RemainingFollowUpStoryTokens} | QuestionTokens: {npcData.RemainingDetectiveQuestionTokens}",
-            this
-        );
+        string interactionText = GetInteractionText();
+        DebugLogNpcState("Interact", interactionText);
     }
 
     public string GetInteractionText()
@@ -139,13 +132,28 @@ public class NpcOrderVisitor : MonoBehaviour
         }
 
         string answer = npcGenerator.GetQuestionResponse(npcData, questionType, playerProfile);
-
-        Debug.Log(
-            $"NPC Question Debug | NPC: {npcData.Name} | Question: {questionType} | Answer: {answer} | TruthTokens: {npcData.RemainingTruthTokens} | LieTokens: {npcData.RemainingLieTokens} | FollowUpTokens: {npcData.RemainingFollowUpStoryTokens} | QuestionTokens: {npcData.RemainingDetectiveQuestionTokens} | SpentQuestions: {npcData.SpentDetectiveQuestionCount}",
-            this
-        );
+        DebugLogNpcState($"Question {questionType}", answer);
 
         return answer;
+    }
+
+    private void DebugLogNpcState(string actionLabel, string responseText)
+    {
+        if (npcData == null)
+        {
+            return;
+        }
+
+        string symptomsText = npcData.Symptoms.Count > 0
+            ? BuildSymptomsDebugText()
+            : "No symptoms";
+        string problemText = npcData.HasProblem ? npcData.ProblemName : "No problem";
+        string safeResponseText = string.IsNullOrWhiteSpace(responseText) ? "No response" : responseText;
+
+        Debug.Log(
+            $"NPC Debug | Action: {actionLabel} | Response: {safeResponseText} | NPC: {npcData.Name} | Gender: {npcData.Gender} | Age: {npcData.Age} | Trait: {npcData.Trait} | Problem: {problemText} | Symptoms: {symptomsText} | TruthTokens: {npcData.RemainingTruthTokens} | LieTokens: {npcData.RemainingLieTokens} | FollowUpTokens: {npcData.RemainingFollowUpStoryTokens} | QuestionTokens: {npcData.RemainingDetectiveQuestionTokens} | SpentQuestions: {npcData.SpentDetectiveQuestionCount}",
+            this
+        );
     }
 
     private string BuildSymptomsDebugText()

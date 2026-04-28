@@ -31,6 +31,11 @@ public class NPC
     [NonSerialized] private HashSet<string> followUpLines = new HashSet<string>();
     [NonSerialized] private List<string> conversationHistory = new List<string>();
     [NonSerialized] private List<string> followUpHistory = new List<string>();
+    [NonSerialized] private Dictionary<NPCQuestionType, List<string>> questionAnswerHistoryByType = new Dictionary<NPCQuestionType, List<string>>();
+    [NonSerialized] private int nextConversationRepeatIndex;
+    [NonSerialized] private Dictionary<NPCQuestionType, int> nextQuestionRepeatIndexByType = new Dictionary<NPCQuestionType, int>();
+    [NonSerialized] private bool shouldRepeatConversationLimitLine = true;
+    [NonSerialized] private Dictionary<NPCQuestionType, bool> shouldRepeatQuestionLimitLineByType = new Dictionary<NPCQuestionType, bool>();
 
     public string Name => npcName;
     public GenderType Gender => gender;
@@ -293,6 +298,95 @@ public class NPC
         return followUpHistory;
     }
 
+    public void RecordQuestionAnswer(NPCQuestionType questionType, string answer)
+    {
+        if (string.IsNullOrWhiteSpace(answer))
+        {
+            return;
+        }
+
+        EnsureRuntimeState();
+        if (!questionAnswerHistoryByType.TryGetValue(questionType, out List<string> answers))
+        {
+            answers = new List<string>();
+            questionAnswerHistoryByType[questionType] = answers;
+        }
+
+        answers.Add(answer.Trim());
+    }
+
+    public bool TryGetRepeatedConversationLine(out string repeatedLine)
+    {
+        EnsureRuntimeState();
+        repeatedLine = null;
+
+        if (conversationHistory.Count == 0)
+        {
+            shouldRepeatConversationLimitLine = true;
+            nextConversationRepeatIndex = 0;
+            return false;
+        }
+
+        if (shouldRepeatConversationLimitLine)
+        {
+            shouldRepeatConversationLimitLine = false;
+            nextConversationRepeatIndex = 0;
+            return false;
+        }
+
+        if (nextConversationRepeatIndex >= conversationHistory.Count)
+        {
+            shouldRepeatConversationLimitLine = true;
+            nextConversationRepeatIndex = 0;
+            return false;
+        }
+
+        repeatedLine = conversationHistory[nextConversationRepeatIndex];
+        nextConversationRepeatIndex++;
+        return !string.IsNullOrWhiteSpace(repeatedLine);
+    }
+
+    public bool TryGetRepeatedQuestionAnswer(NPCQuestionType questionType, out string repeatedAnswer)
+    {
+        EnsureRuntimeState();
+        repeatedAnswer = null;
+
+        if (!questionAnswerHistoryByType.TryGetValue(questionType, out List<string> answers) || answers.Count == 0)
+        {
+            shouldRepeatQuestionLimitLineByType[questionType] = true;
+            nextQuestionRepeatIndexByType[questionType] = 0;
+            return false;
+        }
+
+        if (!shouldRepeatQuestionLimitLineByType.ContainsKey(questionType))
+        {
+            shouldRepeatQuestionLimitLineByType[questionType] = true;
+        }
+
+        if (!nextQuestionRepeatIndexByType.ContainsKey(questionType))
+        {
+            nextQuestionRepeatIndexByType[questionType] = 0;
+        }
+
+        if (shouldRepeatQuestionLimitLineByType[questionType])
+        {
+            shouldRepeatQuestionLimitLineByType[questionType] = false;
+            nextQuestionRepeatIndexByType[questionType] = 0;
+            return false;
+        }
+
+        if (nextQuestionRepeatIndexByType[questionType] >= answers.Count)
+        {
+            shouldRepeatQuestionLimitLineByType[questionType] = true;
+            nextQuestionRepeatIndexByType[questionType] = 0;
+            return false;
+        }
+
+        repeatedAnswer = answers[nextQuestionRepeatIndexByType[questionType]];
+        nextQuestionRepeatIndexByType[questionType]++;
+        return !string.IsNullOrWhiteSpace(repeatedAnswer);
+    }
+
     private void ResetDialogueState()
     {
         truthTokens = 0;
@@ -307,6 +401,11 @@ public class NPC
         followUpLines.Clear();
         conversationHistory.Clear();
         followUpHistory.Clear();
+        questionAnswerHistoryByType.Clear();
+        nextConversationRepeatIndex = 0;
+        nextQuestionRepeatIndexByType.Clear();
+        shouldRepeatConversationLimitLine = true;
+        shouldRepeatQuestionLimitLineByType.Clear();
     }
 
     private void EnsureRuntimeState()
@@ -339,6 +438,21 @@ public class NPC
         if (followUpHistory == null)
         {
             followUpHistory = new List<string>();
+        }
+
+        if (questionAnswerHistoryByType == null)
+        {
+            questionAnswerHistoryByType = new Dictionary<NPCQuestionType, List<string>>();
+        }
+
+        if (nextQuestionRepeatIndexByType == null)
+        {
+            nextQuestionRepeatIndexByType = new Dictionary<NPCQuestionType, int>();
+        }
+
+        if (shouldRepeatQuestionLimitLineByType == null)
+        {
+            shouldRepeatQuestionLimitLineByType = new Dictionary<NPCQuestionType, bool>();
         }
     }
 }

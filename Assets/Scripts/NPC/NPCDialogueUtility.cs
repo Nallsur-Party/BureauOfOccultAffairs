@@ -94,6 +94,11 @@ public static class NPCDialogueUtility
 
         if (npc.RemainingConversationTokens <= 0 || npc.PreparedConversationLines.Count == 0)
         {
+            if (npc.TryGetRepeatedConversationLine(out string repeatedConversationLine))
+            {
+                return repeatedConversationLine;
+            }
+
             return GetFallbackLine(npc.Trait, fallbackCatalog);
         }
 
@@ -128,10 +133,13 @@ public static class NPCDialogueUtility
             return rememberedAnswer;
         }
 
-        int playerQuestionLimit = playerProfile != null ? playerProfile.InterrogationLimit : 1;
-
-        if (npc.GetRememberedQuestionCount() >= playerQuestionLimit || npc.RemainingDetectiveQuestionTokens <= 0)
+        if (npc.RemainingDetectiveQuestionTokens <= 0)
         {
+            if (npc.TryGetRepeatedQuestionAnswer(questionType, out string repeatedAnswer))
+            {
+                return repeatedAnswer;
+            }
+
             return GetQuestionLimitLine();
         }
 
@@ -140,6 +148,7 @@ public static class NPCDialogueUtility
 
         string answer = BuildQuestionAnswer(npc, questionType);
         npc.RememberAnswer(questionType, answer);
+        npc.RecordQuestionAnswer(questionType, answer);
         return answer;
     }
 
@@ -181,28 +190,37 @@ public static class NPCDialogueUtility
 
         if (!string.IsNullOrWhiteSpace(repeatedConversationLine))
         {
+            npc.RecordQuestionAnswer(NPCQuestionType.AnotherStory, repeatedConversationLine);
             return repeatedConversationLine;
         }
 
         if (npc.HasSymptomId(MemoryGapSymptomId))
         {
-            return GetFallbackLine(npc.Trait, fallbackCatalog);
+            if (npc.TryGetRepeatedQuestionAnswer(NPCQuestionType.AnotherStory, out string repeatedQuestionAnswer))
+            {
+                return repeatedQuestionAnswer;
+            }
+
+            return GetQuestionLimitLine();
         }
 
         if (CanVaryFollowUpLine(npc)
             && symptomLinesCatalog != null
             && TryGetContradictoryFollowUpLine(npc, symptomLinesCatalog, out string unstableLine))
         {
-            int playerQuestionLimit = playerProfile != null ? playerProfile.InterrogationLimit : 1;
-
-            if (npc.GetRememberedQuestionCount() >= playerQuestionLimit || npc.RemainingDetectiveQuestionTokens <= 0)
+            if (npc.RemainingDetectiveQuestionTokens <= 0)
             {
+                if (npc.TryGetRepeatedQuestionAnswer(NPCQuestionType.AnotherStory, out string repeatedQuestionAnswer))
+                {
+                    return repeatedQuestionAnswer;
+                }
+
                 return GetQuestionLimitLine();
             }
 
-            npc.MarkQuestionAsked(NPCQuestionType.AnotherStory);
-            npc.ConsumeDetectiveQuestionToken();
+            ConsumeAnotherStoryQuestionToken(npc);
             npc.MarkFollowUpLineTold(unstableLine);
+            npc.RecordQuestionAnswer(NPCQuestionType.AnotherStory, unstableLine);
             return unstableLine;
         }
 
@@ -210,21 +228,46 @@ public static class NPCDialogueUtility
             && symptomLinesCatalog != null
             && TryGetFollowUpLine(npc, symptomLinesCatalog, out string followUpLine))
         {
-            int playerQuestionLimit = playerProfile != null ? playerProfile.InterrogationLimit : 1;
-
-            if (npc.GetRememberedQuestionCount() >= playerQuestionLimit || npc.RemainingDetectiveQuestionTokens <= 0)
+            if (npc.RemainingDetectiveQuestionTokens <= 0)
             {
+                if (npc.TryGetRepeatedQuestionAnswer(NPCQuestionType.AnotherStory, out string repeatedQuestionAnswer))
+                {
+                    return repeatedQuestionAnswer;
+                }
+
                 return GetQuestionLimitLine();
             }
 
-            npc.MarkQuestionAsked(NPCQuestionType.AnotherStory);
-            npc.ConsumeDetectiveQuestionToken();
+            ConsumeAnotherStoryQuestionToken(npc);
             npc.ConsumeFollowUpStoryToken();
             npc.MarkFollowUpLineTold(followUpLine);
+            npc.RecordQuestionAnswer(NPCQuestionType.AnotherStory, followUpLine);
             return followUpLine;
         }
 
-        return GetFallbackLine(npc.Trait, fallbackCatalog);
+        if (npc.TryGetRepeatedQuestionAnswer(NPCQuestionType.AnotherStory, out string repeatedAnotherStoryAnswer))
+        {
+            if (CanVaryFollowUpLine(npc)
+                && npc.RemainingDetectiveQuestionTokens > 0)
+            {
+                ConsumeAnotherStoryQuestionToken(npc);
+            }
+
+            return repeatedAnotherStoryAnswer;
+        }
+
+        return GetQuestionLimitLine();
+    }
+
+    private static void ConsumeAnotherStoryQuestionToken(NPC npc)
+    {
+        if (npc == null)
+        {
+            return;
+        }
+
+        npc.MarkQuestionAsked(NPCQuestionType.AnotherStory);
+        npc.ConsumeDetectiveQuestionToken();
     }
 
     private static bool TryGetPreparedConversationLine(NPC npc, out string selectedLine)
