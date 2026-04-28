@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class NPCGenerator : MonoBehaviour
 {
+    private const int PreparedFallbackLineCount = 3;
+
     [Serializable]
     private class NamePool
     {
@@ -180,6 +182,7 @@ public class NPCGenerator : MonoBehaviour
         NPCTraitType trait = NPCDialogueUtility.GetRandomTrait();
 
         generatedNpc = new NPC(npcName, gender, age, trait);
+        generatedNpc.SetPreparedFallbackLines(BuildPreparedFallbackLines(generatedNpc));
 
         if (problemCatalog == null || problemCatalog.Problems.Count == 0 || UnityEngine.Random.value <= noProblemChance)
         {
@@ -196,6 +199,7 @@ public class NPCGenerator : MonoBehaviour
         EnsureCatalogLoaded();
 
         NPC npc = new NPC(npcName, gender, age, NPCDialogueUtility.GetRandomTrait());
+        npc.SetPreparedFallbackLines(BuildPreparedFallbackLines(npc));
 
         if (string.IsNullOrWhiteSpace(problemName))
         {
@@ -282,6 +286,46 @@ public class NPCGenerator : MonoBehaviour
         }
 
         int preparedCount = Mathf.Min(npc.RemainingConversationTokens, candidateLines.Count);
+
+        for (int i = 0; i < preparedCount; i++)
+        {
+            int selectedIndex = UnityEngine.Random.Range(0, candidateLines.Count);
+            preparedLines.Add(candidateLines[selectedIndex]);
+            candidateLines.RemoveAt(selectedIndex);
+        }
+
+        return preparedLines;
+    }
+
+    private List<string> BuildPreparedFallbackLines(NPC npc)
+    {
+        List<string> preparedLines = new List<string>();
+
+        if (npc == null || traitFallbackCatalog == null)
+        {
+            return preparedLines;
+        }
+
+        if (!traitFallbackCatalog.TryGetLines(npc.Trait, out IReadOnlyList<string> fallbackLines) || fallbackLines.Count == 0)
+        {
+            return preparedLines;
+        }
+
+        List<string> candidateLines = new List<string>();
+
+        for (int i = 0; i < fallbackLines.Count; i++)
+        {
+            string line = fallbackLines[i];
+
+            if (string.IsNullOrWhiteSpace(line) || candidateLines.Contains(line))
+            {
+                continue;
+            }
+
+            candidateLines.Add(line);
+        }
+
+        int preparedCount = Mathf.Min(PreparedFallbackLineCount, candidateLines.Count);
 
         for (int i = 0; i < preparedCount; i++)
         {

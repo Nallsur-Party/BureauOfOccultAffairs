@@ -22,6 +22,7 @@ public class NPC
     [SerializeField] private List<string> symptomIds = new List<string>();
     [SerializeField] private List<string> symptoms = new List<string>();
     [SerializeField] private List<string> preparedConversationLines = new List<string>();
+    [SerializeField] private List<string> preparedFallbackLines = new List<string>();
     [SerializeField] private int truthTokens;
     [SerializeField] private int lieTokens;
     [SerializeField] private int detectiveQuestionTokens;
@@ -46,6 +47,7 @@ public class NPC
     public IReadOnlyList<string> SymptomIds => symptomIds;
     public IReadOnlyList<string> Symptoms => symptoms;
     public IReadOnlyList<string> PreparedConversationLines => preparedConversationLines;
+    public IReadOnlyList<string> PreparedFallbackLines => preparedFallbackLines;
     public int RemainingTruthTokens => truthTokens;
     public int RemainingLieTokens => lieTokens;
     public int RemainingConversationTokens => truthTokens + lieTokens;
@@ -133,12 +135,28 @@ public class NPC
         }
     }
 
+    public void SetPreparedFallbackLines(IEnumerable<string> lines)
+    {
+        preparedFallbackLines.Clear();
+
+        if (lines == null)
+        {
+            return;
+        }
+
+        foreach (string line in lines)
+        {
+            AddNormalizedLine(preparedFallbackLines, line);
+        }
+    }
+
     public void ClearProblem()
     {
         problemName = null;
         symptomIds.Clear();
         symptoms.Clear();
         preparedConversationLines.Clear();
+        preparedFallbackLines.Clear();
         ResetDialogueState();
     }
 

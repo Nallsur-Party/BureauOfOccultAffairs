@@ -45,9 +45,17 @@ public static class NPCDialogueUtility
         return Random.Range(profile.MinDetectiveTokens, profile.MaxDetectiveTokens + 1);
     }
 
-    public static string GetFallbackLine(NPCTraitType trait, NPCTraitFallbackCatalog fallbackCatalog)
+    public static string GetFallbackLine(NPC npc, NPCTraitFallbackCatalog fallbackCatalog)
     {
-        if (fallbackCatalog != null && fallbackCatalog.TryGetLines(trait, out IReadOnlyList<string> lines) && lines.Count > 0)
+        if (npc != null && npc.PreparedFallbackLines.Count > 0)
+        {
+            return npc.PreparedFallbackLines[Random.Range(0, npc.PreparedFallbackLines.Count)];
+        }
+
+        if (npc != null
+            && fallbackCatalog != null
+            && fallbackCatalog.TryGetLines(npc.Trait, out IReadOnlyList<string> lines)
+            && lines.Count > 0)
         {
             return lines[Random.Range(0, lines.Count)];
         }
@@ -83,12 +91,12 @@ public static class NPCDialogueUtility
                 return repeatedConversationLine;
             }
 
-            return GetFallbackLine(npc.Trait, fallbackCatalog);
+            return GetFallbackLine(npc, fallbackCatalog);
         }
 
         if (!TryGetPreparedConversationLine(npc, out string conversationLine))
         {
-            return GetFallbackLine(npc.Trait, fallbackCatalog);
+            return GetFallbackLine(npc, fallbackCatalog);
         }
 
         return conversationLine;
