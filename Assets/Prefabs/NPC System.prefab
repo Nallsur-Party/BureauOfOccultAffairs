@@ -46,6 +46,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   npcProblemsXml: {fileID: 4900000, guid: 3aead19fd5a76af47b32842ca7931c92, type: 3}
   npcSymptomeLinesXml: {fileID: 4900000, guid: f17ece05ab0cf4b4bba07e2240a2bc56, type: 3}
+  npcTraitFallbackLinesXml: {fileID: 4900000, guid: 2c12fa36b924ddd48a44bae6528e58e6,
+    type: 3}
+  npcNameListXml: {fileID: 4900000, guid: 6d8ad7b7c03f0394187d393f19ebf4f6, type: 3}
   minAge: 18
   maxAge: 65
   noProblemChance: 0.15
@@ -62,6 +65,7 @@ MonoBehaviour:
     - "\u0422\u0440\u0430\u043D\u0441"
     - "\u0422\u0440\u0430\u043D\u0441\u0414\u0430\u043D\u0438\u043B"
     - "\u0422\u0440\u0430\u043D\u0441\u0418\u0433\u043D\u0430\u0442"
+    surnames: []
   loadOnAwake: 1
   generatedNpc:
     npcName: "\u0422\u0440\u0430\u043D\u0441\u0418\u0433\u043D\u0430\u0442"
@@ -75,5 +79,9 @@ MonoBehaviour:
     - "\u041D\u0435 \u0445\u043E\u0447\u0435\u0442 \u043E\u0442\u0434\u0430\u0432\u0430\u0442\u044C
       \u0432\u0435\u0449\u044C"
     - "\u0421\u0442\u0440\u0430\u043D\u043D\u044B\u0435 \u0441\u043E\u0432\u043F\u0430\u0434\u0435\u043D\u0438\u044F"
+    preparedConversationLines: []
     truthTokens: 0
-    revealedSymptomIds: []
+    lieTokens: 0
+    followUpStoryTokens: 0
+    detectiveQuestionTokens: 0
+    spentDetectiveQuestionCount: 0

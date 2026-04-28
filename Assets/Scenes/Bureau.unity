@@ -2049,6 +2049,36 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC System
       objectReference: {fileID: 0}
+    - target: {fileID: 6380206237659848771, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: generatedNpc.npcName
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6380206237659848771, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: namePool.maleNames.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6380206237659848771, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: namePool.otherNames.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6380206237659848771, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: namePool.femaleNames.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6380206237659848771, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: namePool.maleNames.Array.data[0]
+      value: "\u042D\u0440\u0447\u0438\u043C"
+      objectReference: {fileID: 0}
+    - target: {fileID: 6380206237659848771, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: namePool.maleNames.Array.data[1]
+      value: "\u0414\u0430\u043D\u0438\u043B"
+      objectReference: {fileID: 0}
     - target: {fileID: 7181312806285078053, guid: d481733bff90832419fd7d5445713bb5,
         type: 3}
       propertyPath: m_LocalPosition.x

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Xml.Linq;
 using UnityEngine;
 
 public class NPCGenerator : MonoBehaviour
@@ -10,6 +11,7 @@ public class NPCGenerator : MonoBehaviour
         [SerializeField] private List<string> maleNames = new List<string>();
         [SerializeField] private List<string> femaleNames = new List<string>();
         [SerializeField] private List<string> otherNames = new List<string>();
+        [SerializeField] private List<string> surnames = new List<string>();
 
         public string GetRandomName(NPC.GenderType gender)
         {
@@ -20,7 +22,15 @@ public class NPCGenerator : MonoBehaviour
                 return "Unnamed NPC";
             }
 
-            return selectedPool[UnityEngine.Random.Range(0, selectedPool.Count)];
+            string firstName = selectedPool[UnityEngine.Random.Range(0, selectedPool.Count)];
+
+            if (surnames.Count == 0)
+            {
+                return firstName;
+            }
+
+            string surname = surnames[UnityEngine.Random.Range(0, surnames.Count)];
+            return $"{firstName} {surname}";
         }
 
         private List<string> GetPool(NPC.GenderType gender)
@@ -37,12 +47,56 @@ public class NPCGenerator : MonoBehaviour
                     return otherNames.Count > 0 ? otherNames : femaleNames.Count > 0 ? femaleNames : maleNames;
             }
         }
+
+        public void LoadFromXml(TextAsset xmlAsset)
+        {
+            if (xmlAsset == null || string.IsNullOrWhiteSpace(xmlAsset.text))
+            {
+                return;
+            }
+
+            XDocument document = XDocument.Parse(xmlAsset.text);
+            XElement root = document.Element("names");
+
+            if (root == null)
+            {
+                return;
+            }
+
+            maleNames = ReadValues(root.Element("male_names"), "name");
+            femaleNames = ReadValues(root.Element("female_names"), "name");
+            otherNames = ReadValues(root.Element("other_names"), "name");
+            surnames = ReadValues(root.Element("surnames"), "surname");
+        }
+
+        private static List<string> ReadValues(XElement parentElement, string childName)
+        {
+            List<string> values = new List<string>();
+
+            if (parentElement == null)
+            {
+                return values;
+            }
+
+            foreach (XElement element in parentElement.Elements(childName))
+            {
+                string value = element.Value?.Trim();
+
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    values.Add(value);
+                }
+            }
+
+            return values;
+        }
     }
 
     [Header("Data")]
     [SerializeField] private TextAsset npcProblemsXml;
     [SerializeField] private TextAsset npcSymptomeLinesXml;
     [SerializeField] private TextAsset npcTraitFallbackLinesXml;
+    [SerializeField] private TextAsset npcNameListXml;
 
     [Header("NPC Settings")]
     [SerializeField] private int minAge = 18;
@@ -95,6 +149,11 @@ public class NPCGenerator : MonoBehaviour
         if (npcTraitFallbackLinesXml != null)
         {
             traitFallbackCatalog = NPCTraitFallbackLoader.Load(npcTraitFallbackLinesXml);
+        }
+
+        if (npcNameListXml != null)
+        {
+            namePool.LoadFromXml(npcNameListXml);
         }
     }
 
