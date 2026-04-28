@@ -21,6 +21,7 @@ public class NPC
     [SerializeField] private List<string> symptoms = new List<string>();
     [SerializeField] private List<string> preparedConversationLines = new List<string>();
     [SerializeField] private int truthTokens;
+    [SerializeField] private int lieTokens;
     [SerializeField] private int followUpStoryTokens;
     [SerializeField] private int detectiveQuestionTokens;
     [SerializeField] private int spentDetectiveQuestionCount;
@@ -40,6 +41,8 @@ public class NPC
     public IReadOnlyList<string> Symptoms => symptoms;
     public IReadOnlyList<string> PreparedConversationLines => preparedConversationLines;
     public int RemainingTruthTokens => truthTokens;
+    public int RemainingLieTokens => lieTokens;
+    public int RemainingConversationTokens => truthTokens + lieTokens;
     public int RemainingFollowUpStoryTokens => followUpStoryTokens;
     public int RemainingDetectiveQuestionTokens => detectiveQuestionTokens;
     public int SpentDetectiveQuestionCount => spentDetectiveQuestionCount;
@@ -94,9 +97,10 @@ public class NPC
             symptoms.Add(symptom.Trim());
         }
 
-        truthTokens = NPCDialogueUtility.CalculateTruthTokens(trait, symptomIds.Count);
+        truthTokens = NPCDialogueUtility.CalculateTruthTokens(trait);
+        lieTokens = NPCDialogueUtility.CalculateLieTokens(trait);
         followUpStoryTokens = NPCDialogueUtility.CalculateFollowUpStoryTokens(trait, symptomIds.Count);
-        detectiveQuestionTokens = NPCDialogueUtility.CalculateDetectiveQuestionTokens(trait, symptomIds.Count);
+        detectiveQuestionTokens = NPCDialogueUtility.CalculateDetectiveQuestionTokens(trait);
     }
 
     public void SetProblem(NPCProblemDefinition problem)
@@ -142,6 +146,25 @@ public class NPC
     public void ConsumeTruthToken()
     {
         truthTokens = Math.Max(0, truthTokens - 1);
+    }
+
+    public void ConsumeLieToken()
+    {
+        lieTokens = Math.Max(0, lieTokens - 1);
+    }
+
+    public void ConsumeConversationToken()
+    {
+        if (truthTokens > 0)
+        {
+            ConsumeTruthToken();
+            return;
+        }
+
+        if (lieTokens > 0)
+        {
+            ConsumeLieToken();
+        }
     }
 
     public void ConsumeFollowUpStoryToken()
@@ -273,6 +296,7 @@ public class NPC
     private void ResetDialogueState()
     {
         truthTokens = 0;
+        lieTokens = 0;
         followUpStoryTokens = 0;
         detectiveQuestionTokens = 0;
         spentDetectiveQuestionCount = 0;

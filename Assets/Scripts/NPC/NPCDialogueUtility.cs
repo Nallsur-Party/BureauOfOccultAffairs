@@ -13,21 +13,29 @@ public static class NPCDialogueUtility
         return (NPCTraitType)Random.Range(0, traitCount);
     }
 
-    public static int CalculateTruthTokens(NPCTraitType trait, int symptomCount)
+    public static NPCTraitTokenProfile GetTraitTokenProfile(NPCTraitType trait)
     {
-        int clampedSymptomCount = Mathf.Max(0, symptomCount);
-
         switch (trait)
         {
             case NPCTraitType.Honest:
-                return Mathf.Max(1, clampedSymptomCount);
+                return new NPCTraitTokenProfile(4, 0, 1, 3);
 
             case NPCTraitType.Liar:
-                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.35f));
+                return new NPCTraitTokenProfile(2, 2, 3, 4);
 
             default:
-                return Mathf.Max(1, Mathf.CeilToInt(clampedSymptomCount * 0.6f));
+                return new NPCTraitTokenProfile(3, 1, 2, 4);
         }
+    }
+
+    public static int CalculateTruthTokens(NPCTraitType trait)
+    {
+        return GetTraitTokenProfile(trait).TruthTokens;
+    }
+
+    public static int CalculateLieTokens(NPCTraitType trait)
+    {
+        return GetTraitTokenProfile(trait).LieTokens;
     }
 
     public static int CalculateFollowUpStoryTokens(NPCTraitType trait, int symptomCount)
@@ -47,16 +55,10 @@ public static class NPCDialogueUtility
         }
     }
 
-    public static int CalculateDetectiveQuestionTokens(NPCTraitType trait, int symptomCount)
+    public static int CalculateDetectiveQuestionTokens(NPCTraitType trait)
     {
-        int baseTokens = trait == NPCTraitType.Honest ? 4 : trait == NPCTraitType.Neutral ? 3 : 2;
-
-        if (symptomCount <= 0)
-        {
-            return Mathf.Max(2, baseTokens - 1);
-        }
-
-        return Mathf.Clamp(baseTokens, 1, 4);
+        NPCTraitTokenProfile profile = GetTraitTokenProfile(trait);
+        return Random.Range(profile.MinDetectiveTokens, profile.MaxDetectiveTokens + 1);
     }
 
     public static string GetFallbackLine(NPCTraitType trait, NPCTraitFallbackCatalog fallbackCatalog)
@@ -90,7 +92,7 @@ public static class NPCDialogueUtility
             return "Ничего странного со мной вроде бы не происходит.";
         }
 
-        if (npc.RemainingTruthTokens <= 0 || npc.PreparedConversationLines.Count == 0)
+        if (npc.RemainingConversationTokens <= 0 || npc.PreparedConversationLines.Count == 0)
         {
             return GetFallbackLine(npc.Trait, fallbackCatalog);
         }
@@ -343,7 +345,7 @@ public static class NPCDialogueUtility
             return false;
         }
 
-        npc.ConsumeTruthToken();
+        npc.ConsumeConversationToken();
         npc.MarkConversationLineTold(line);
         return true;
     }

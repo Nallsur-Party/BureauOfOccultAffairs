@@ -102,7 +102,7 @@ public class NpcOrderVisitor : MonoBehaviour
         string problemText = npcData.HasProblem ? npcData.ProblemName : "No problem";
 
         Debug.Log(
-            $"NPC: {npcData.Name} | Gender: {npcData.Gender} | Age: {npcData.Age} | Trait: {npcData.Trait} | Problem: {problemText} | Symptoms: {symptomsText} | DialogueTokens: {npcData.RemainingTruthTokens} | FollowUpTokens: {npcData.RemainingFollowUpStoryTokens} | QuestionTokens: {npcData.RemainingDetectiveQuestionTokens}",
+            $"NPC: {npcData.Name} | Gender: {npcData.Gender} | Age: {npcData.Age} | Trait: {npcData.Trait} | Problem: {problemText} | Symptoms: {symptomsText} | TruthTokens: {npcData.RemainingTruthTokens} | LieTokens: {npcData.RemainingLieTokens} | FollowUpTokens: {npcData.RemainingFollowUpStoryTokens} | QuestionTokens: {npcData.RemainingDetectiveQuestionTokens}",
             this
         );
     }
@@ -141,7 +141,7 @@ public class NpcOrderVisitor : MonoBehaviour
         string answer = npcGenerator.GetQuestionResponse(npcData, questionType, playerProfile);
 
         Debug.Log(
-            $"NPC Question Debug | NPC: {npcData.Name} | Question: {questionType} | Answer: {answer} | DialogueTokens: {npcData.RemainingTruthTokens} | FollowUpTokens: {npcData.RemainingFollowUpStoryTokens} | QuestionTokens: {npcData.RemainingDetectiveQuestionTokens} | SpentQuestions: {npcData.SpentDetectiveQuestionCount}",
+            $"NPC Question Debug | NPC: {npcData.Name} | Question: {questionType} | Answer: {answer} | TruthTokens: {npcData.RemainingTruthTokens} | LieTokens: {npcData.RemainingLieTokens} | FollowUpTokens: {npcData.RemainingFollowUpStoryTokens} | QuestionTokens: {npcData.RemainingDetectiveQuestionTokens} | SpentQuestions: {npcData.SpentDetectiveQuestionCount}",
             this
         );
 

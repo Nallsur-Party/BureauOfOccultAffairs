@@ -210,7 +210,7 @@ public class NPCGenerator : MonoBehaviour
             }
         }
 
-        int preparedCount = Mathf.Min(npc.RemainingTruthTokens, candidateLines.Count);
+        int preparedCount = Mathf.Min(npc.RemainingConversationTokens, candidateLines.Count);
 
         for (int i = 0; i < preparedCount; i++)
         {
