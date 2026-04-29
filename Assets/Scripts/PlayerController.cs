@@ -53,6 +53,7 @@ public class PlayerController : MonoBehaviour
     private NpcOrderVisitor currentInteractableNpc;
     private NpcOrderVisitor activeDialogueNpc;
     private float dialogueHideTimer = -1f;
+    private NPCSpawner npcSpawner;
 
     private void Awake()
     {
@@ -60,6 +61,7 @@ public class PlayerController : MonoBehaviour
         playerProfile = GetComponent<PlayerProfile>();
         bodyCollider = GetComponent<Collider>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        npcSpawner = FindObjectOfType<NPCSpawner>();
         rb.constraints = RigidbodyConstraints.FreezeRotation;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
@@ -78,6 +80,7 @@ public class PlayerController : MonoBehaviour
         }
 
         HandleDialogueInput();
+        HandleDebugNpcCommands();
 
         UpdateGroundedState();
         UpdateFacing();
@@ -221,6 +224,51 @@ public class PlayerController : MonoBehaviour
         {
             AskNpcQuestion(NPCQuestionType.AnotherStory);
         }
+    }
+
+    private void HandleDebugNpcCommands()
+    {
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            SendNpcToExit("Z");
+        }
+        else if (Input.GetKeyDown(KeyCode.N))
+        {
+            SendNpcToExit("N");
+        }
+        else if (Input.GetKeyDown(KeyCode.P))
+        {
+            SpawnNPC();
+        }
+    }
+
+    private void SpawnNPC()
+    {
+        if (npcSpawner != null)
+        {
+            npcSpawner.SpawnNPC();
+        }
+        else
+        {
+            Debug.LogWarning("NPCSpawner not found in scene!");
+        }
+    }
+
+    private void SendNpcToExit(string exitName)
+    {
+        NpcOrderVisitor[] allNpcs = FindObjectsOfType<NpcOrderVisitor>();
+
+        foreach (NpcOrderVisitor npc in allNpcs)
+        {
+            if (npc.IsWaitingAtCounter)
+            {
+                npc.LeaveThroughExitByName(exitName);
+                Debug.Log($"Sending NPC {npc.gameObject.name} to exit {exitName}");
+                return;
+            }
+        }
+
+        Debug.Log($"No NPC waiting at counter to send to exit {exitName}");
     }
 
     private void StartNpcConversation(NpcOrderVisitor npc)

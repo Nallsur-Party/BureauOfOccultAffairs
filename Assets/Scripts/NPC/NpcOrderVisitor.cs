@@ -124,6 +124,21 @@ public class NpcOrderVisitor : MonoBehaviour
         DebugLogNpcState("Interact", interactionText);
     }
 
+    public void SetNpcData(NPC npc)
+    {
+        if (npc == null)
+        {
+            return;
+        }
+
+        npcData = npc;
+
+        if (renameGameObjectToNpcName && !string.IsNullOrWhiteSpace(npcData.Name))
+        {
+            gameObject.name = $"NPC - {npcData.Name}";
+        }
+    }
+
     public string GetInteractionText()
     {
         if (npcData == null)
@@ -257,6 +272,23 @@ public class NpcOrderVisitor : MonoBehaviour
         currentState = VisitorState.Leaving;
     }
 
+    public void LeaveThroughExitByName(string exitName)
+    {
+        if (exitPoints == null || string.IsNullOrWhiteSpace(exitName))
+        {
+            return;
+        }
+
+        for (int i = 0; i < exitPoints.Length; i++)
+        {
+            if (exitPoints[i] != null && exitPoints[i].name.Contains(exitName))
+            {
+                LeaveThroughExit(i);
+                return;
+            }
+        }
+    }
+
     private void ArriveAtTarget()
     {
         switch (currentState)
@@ -271,6 +303,7 @@ public class NpcOrderVisitor : MonoBehaviour
                 currentState = VisitorState.Idle;
                 currentTarget = null;
                 onLeftScene.Invoke();
+                gameObject.SetActive(false);
                 break;
         }
     }
