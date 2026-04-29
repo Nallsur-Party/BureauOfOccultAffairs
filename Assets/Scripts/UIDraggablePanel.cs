@@ -7,6 +7,7 @@ public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, 
     [SerializeField] private RectTransform dragTarget;
     [SerializeField] private Canvas parentCanvas;
     [SerializeField] private bool disableRaycasterWhileDragging = true;
+    [SerializeField, Range(0f, 1f)] private float visiblePortion = 0.5f;
 
     private Vector2 dragOffset;
     private RectTransform referenceRect;
@@ -119,11 +120,12 @@ public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         Vector2 targetSize = dragTarget.rect.size;
         Vector2 targetPivot = dragTarget.pivot;
         Vector2 referenceSize = referenceRect.rect.size;
+        float hiddenPortion = 1f - Mathf.Clamp01(visiblePortion);
 
-        float minX = -referenceSize.x * referenceRect.pivot.x + targetSize.x * targetPivot.x;
-        float maxX = referenceSize.x * (1f - referenceRect.pivot.x) - targetSize.x * (1f - targetPivot.x);
-        float minY = -referenceSize.y * referenceRect.pivot.y + targetSize.y * targetPivot.y;
-        float maxY = referenceSize.y * (1f - referenceRect.pivot.y) - targetSize.y * (1f - targetPivot.y);
+        float minX = -referenceSize.x * referenceRect.pivot.x + targetSize.x * (targetPivot.x - hiddenPortion);
+        float maxX = referenceSize.x * (1f - referenceRect.pivot.x) - targetSize.x * ((1f - targetPivot.x) - hiddenPortion);
+        float minY = -referenceSize.y * referenceRect.pivot.y + targetSize.y * (targetPivot.y - hiddenPortion);
+        float maxY = referenceSize.y * (1f - referenceRect.pivot.y) - targetSize.y * ((1f - targetPivot.y) - hiddenPortion);
 
         anchoredPosition.x = Mathf.Clamp(anchoredPosition.x, minX, maxX);
         anchoredPosition.y = Mathf.Clamp(anchoredPosition.y, minY, maxY);
