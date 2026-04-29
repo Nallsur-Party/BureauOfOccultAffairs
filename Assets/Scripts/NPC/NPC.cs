@@ -172,16 +172,20 @@ public class NPC
 
     public void ConsumeConversationToken()
     {
-        if (truthTokens > 0)
+        int totalTokens = truthTokens + lieTokens;
+        if (totalTokens <= 0)
+        {
+            return;
+        }
+
+        int selectedTokenIndex = UnityEngine.Random.Range(0, totalTokens);
+        if (selectedTokenIndex < truthTokens)
         {
             ConsumeTruthToken();
             return;
         }
 
-        if (lieTokens > 0)
-        {
-            ConsumeLieToken();
-        }
+        ConsumeLieToken();
     }
 
     public bool HasSymptomId(string symptomId)
