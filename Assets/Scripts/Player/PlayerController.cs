@@ -448,6 +448,7 @@ public class PlayerController : MonoBehaviour
 
         bool isInRange = currentInteractableNpc == activeDialogueNpc;
         activeDialogueNpc.SetDialogueFocus(isInRange);
+        activeDialogueNpc.SyncHealthBarVisibility(activeDialogueNpc.IsDialogueVisible);
 
         if (!isInRange && !activeDialogueNpc.IsDialogueVisible)
         {

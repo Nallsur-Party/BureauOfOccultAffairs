@@ -8097,6 +8097,32 @@ PrefabInstance:
       propertyPath: exitPoints.Array.data[1]
       value: 
       objectReference: {fileID: 509108264}
+    - target: {fileID: 4681263422925848110, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+        type: 3}
+      propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4681263422925848110, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+        type: 3}
+      propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4681263422925848110, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+        type: 3}
+      propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 11500000, guid: 6a0d5d612d4f9cc41b3d1678bea641cf,
+        type: 3}
+    - target: {fileID: 4681263422925848110, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+        type: 3}
+      propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4681263422925848110, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+        type: 3}
+      propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UnityEditor.DefaultAsset, UnityEditor.CoreModule
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

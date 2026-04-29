@@ -43,6 +43,7 @@ public class NpcOrderVisitor : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private float lookAtPlayerRadius = 2f;
     [SerializeField] private NPCDialogueBubble dialogueBubble;
+    [SerializeField] private NPCHealthBar healthBar;
 
     [Header("NPC Data")]
     [SerializeField] private NPCGenerator npcGenerator;
@@ -105,6 +106,11 @@ public class NpcOrderVisitor : MonoBehaviour
         if (dialogueBubble == null)
         {
             dialogueBubble = GetComponentInChildren<NPCDialogueBubble>();
+        }
+
+        if (healthBar == null)
+        {
+            healthBar = GetComponentInChildren<NPCHealthBar>(true);
         }
 
         if (npcQueueManager == null)
@@ -234,6 +240,10 @@ public class NpcOrderVisitor : MonoBehaviour
         }
 
         dialogueBubble.Show(message);
+        if (healthBar != null)
+        {
+            healthBar.SetVisible(true);
+        }
     }
 
     public void ShowPersistentDialogue(string message)
@@ -244,6 +254,10 @@ public class NpcOrderVisitor : MonoBehaviour
         }
 
         dialogueBubble.ShowPersistent(message);
+        if (healthBar != null)
+        {
+            healthBar.SetVisible(true);
+        }
     }
 
     public void HideDialogue()
@@ -254,6 +268,10 @@ public class NpcOrderVisitor : MonoBehaviour
         }
 
         dialogueBubble.Hide();
+        if (healthBar != null)
+        {
+            healthBar.SetVisible(false);
+        }
     }
 
     public void SetDialogueFocus(bool focused)
@@ -264,6 +282,26 @@ public class NpcOrderVisitor : MonoBehaviour
         }
 
         dialogueBubble.SetFocus(focused);
+    }
+
+    public void SyncHealthBarVisibility(bool visible)
+    {
+        if (healthBar == null)
+        {
+            return;
+        }
+
+        healthBar.SetVisible(visible);
+    }
+
+    public void RefreshHealthBar()
+    {
+        if (healthBar == null)
+        {
+            return;
+        }
+
+        healthBar.Refresh();
     }
 
     public bool IsDialogueVisible
