@@ -46,6 +46,19 @@ public class NPCDialogueBubble : MonoBehaviour
         hideTimer = hideDelay;
     }
 
+    public void ShowPersistent(string message)
+    {
+        if (bubbleRoot == null || bubbleText == null)
+        {
+            return;
+        }
+
+        SetVisible(true);
+        bubbleText.text = message;
+        bubbleText.ForceMeshUpdate();
+        hideTimer = -1f;
+    }
+
     public void Show(string message, float duration)
     {
         if (bubbleRoot == null || bubbleText == null)

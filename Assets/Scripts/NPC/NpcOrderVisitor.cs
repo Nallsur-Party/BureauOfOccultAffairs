@@ -236,6 +236,16 @@ public class NpcOrderVisitor : MonoBehaviour
         dialogueBubble.Show(message);
     }
 
+    public void ShowPersistentDialogue(string message)
+    {
+        if (dialogueBubble == null)
+        {
+            return;
+        }
+
+        dialogueBubble.ShowPersistent(message);
+    }
+
     public void HideDialogue()
     {
         if (dialogueBubble == null)

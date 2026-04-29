@@ -84,8 +84,9 @@ public class PlayerController : MonoBehaviour
         UpdateAnimator();
         SetInteractionPromptVisible(currentInteractableNpc != null);
 
-        if (currentInteractableNpc == null)
+        if (activeDialogueNpc != null && currentInteractableNpc != activeDialogueNpc)
         {
+            activeDialogueNpc.HideDialogue();
             activeDialogueNpc = null;
         }
     }
@@ -270,7 +271,7 @@ public class PlayerController : MonoBehaviour
     {
         activeDialogueNpc = npc;
         string interactionText = npc.Interact();
-        npc.ShowDialogue(interactionText);
+        npc.ShowPersistentDialogue(interactionText);
     }
 
     private void AskNpcQuestion(NPCQuestionType questionType)
@@ -280,7 +281,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        activeDialogueNpc.ShowDialogue(activeDialogueNpc.GetQuestionResponse(questionType, playerProfile));
+        activeDialogueNpc.ShowPersistentDialogue(activeDialogueNpc.GetQuestionResponse(questionType, playerProfile));
     }
 
     private void UpdateAnimator()
