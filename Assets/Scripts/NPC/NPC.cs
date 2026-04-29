@@ -6,6 +6,7 @@ using UnityEngine;
 public class NPC
 {
     private const int RepeatIndexStart = 0;
+    private const int DefaultRitualMaxHealth = 3;
 
     public enum GenderType
     {
@@ -27,6 +28,9 @@ public class NPC
     [SerializeField] private int lieTokens;
     [SerializeField] private int detectiveQuestionTokens;
     [SerializeField] private int spentDetectiveQuestionCount;
+    [SerializeField] private int health;
+    [SerializeField] private int maxHealth;
+    [SerializeField] private bool isCured;
     [NonSerialized] private HashSet<NPCQuestionType> askedQuestionTypes = new HashSet<NPCQuestionType>();
     [NonSerialized] private Dictionary<NPCQuestionType, string> rememberedAnswers = new Dictionary<NPCQuestionType, string>();
     [NonSerialized] private HashSet<string> conversationLines = new HashSet<string>();
@@ -54,6 +58,10 @@ public class NPC
     public int RemainingDetectiveQuestionTokens => detectiveQuestionTokens;
     public int SpentDetectiveQuestionCount => spentDetectiveQuestionCount;
     public bool HasProblem => !string.IsNullOrWhiteSpace(problemName);
+    public int Health => health;
+    public int MaxHealth => maxHealth;
+    public bool IsCured => isCured;
+    public bool IsAlive => health > 0;
 
     public NPC(string npcName, GenderType gender, int age, NPCTraitType trait)
     {
@@ -78,6 +86,7 @@ public class NPC
 
         if (!HasProblem || newSymptoms == null)
         {
+            InitializeRitualState(0);
             return;
         }
 
@@ -107,6 +116,7 @@ public class NPC
         truthTokens = NPCDialogueUtility.CalculateTruthTokens(trait);
         lieTokens = NPCDialogueUtility.CalculateLieTokens(trait);
         detectiveQuestionTokens = NPCDialogueUtility.CalculateDetectiveQuestionTokens(trait);
+        InitializeRitualState(DefaultRitualMaxHealth);
     }
 
     public void SetProblem(NPCProblemDefinition problem)
@@ -157,7 +167,31 @@ public class NPC
         symptoms.Clear();
         preparedConversationLines.Clear();
         preparedFallbackLines.Clear();
+        InitializeRitualState(0);
         ResetDialogueState();
+    }
+
+    public void InitializeRitualState(int newMaxHealth)
+    {
+        maxHealth = Math.Max(0, newMaxHealth);
+        health = maxHealth;
+        isCured = false;
+    }
+
+    public void ApplyRitualDamage(int amount)
+    {
+        if (amount <= 0 || maxHealth <= 0)
+        {
+            return;
+        }
+
+        health = Math.Max(0, health - amount);
+        isCured = false;
+    }
+
+    public void MarkCured()
+    {
+        isCured = true;
     }
 
     public void ConsumeTruthToken()

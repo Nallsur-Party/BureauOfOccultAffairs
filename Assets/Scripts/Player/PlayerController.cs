@@ -38,6 +38,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask interactionMask = ~0;
     [SerializeField] private GameObject interactionPrompt;
 
+    [Header("Debug Ritual")]
+    [SerializeField] private RitualManager ritualManager;
+
     private Rigidbody rb;
     private PlayerProfile playerProfile;
     private Collider bodyCollider;
@@ -51,6 +54,8 @@ public class PlayerController : MonoBehaviour
     private NpcOrderVisitor activeDialogueNpc;
     private NPCSpawner npcSpawner;
     private NPCQueueManager npcQueueManager;
+    private RitualItemType selectedRitualItem = RitualItemType.Necklace;
+    private RitualActionType selectedRitualAction = RitualActionType.EquipOnNpc;
 
     private void Awake()
     {
@@ -60,6 +65,14 @@ public class PlayerController : MonoBehaviour
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         npcSpawner = FindObjectOfType<NPCSpawner>();
         npcQueueManager = FindObjectOfType<NPCQueueManager>();
+        ritualManager = FindObjectOfType<RitualManager>();
+
+        if (ritualManager == null)
+        {
+            GameObject ritualManagerObject = new GameObject("RitualManager");
+            ritualManager = ritualManagerObject.AddComponent<RitualManager>();
+        }
+
         rb.constraints = RigidbodyConstraints.FreezeRotation;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
@@ -77,6 +90,7 @@ public class PlayerController : MonoBehaviour
         }
 
         HandleDialogueInput();
+        HandleRitualInput();
         HandleDebugNpcCommands();
 
         UpdateGroundedState();
@@ -86,6 +100,11 @@ public class PlayerController : MonoBehaviour
 
         if (activeDialogueNpc != null && currentInteractableNpc != activeDialogueNpc)
         {
+            if (ritualManager != null)
+            {
+                ritualManager.ClearProgress(activeDialogueNpc);
+            }
+
             activeDialogueNpc.HideDialogue();
             activeDialogueNpc = null;
         }
@@ -201,21 +220,32 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.Alpha1))
+        if (!IsRitualActionModifierPressed() && Input.GetKeyDown(KeyCode.Alpha1))
         {
             AskNpcQuestion(NPCQuestionType.Name);
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        else if (!IsRitualActionModifierPressed() && Input.GetKeyDown(KeyCode.Alpha2))
         {
             AskNpcQuestion(NPCQuestionType.Gender);
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        else if (!IsRitualActionModifierPressed() && Input.GetKeyDown(KeyCode.Alpha3))
         {
             AskNpcQuestion(NPCQuestionType.Age);
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha4))
+        else if (!IsRitualActionModifierPressed() && Input.GetKeyDown(KeyCode.Alpha4))
         {
             AskNpcQuestion(NPCQuestionType.AnotherStory);
+        }
+    }
+
+    private void HandleRitualInput()
+    {
+        HandleRitualItemSelection();
+        HandleRitualActionSelection();
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            PerformRitualStep();
         }
     }
 
@@ -269,9 +299,26 @@ public class PlayerController : MonoBehaviour
 
     private void StartNpcConversation(NpcOrderVisitor npc)
     {
+        if (npc == null)
+        {
+            return;
+        }
+
+        if (activeDialogueNpc != null && activeDialogueNpc != npc && ritualManager != null)
+        {
+            ritualManager.ClearProgress(activeDialogueNpc);
+        }
+
         activeDialogueNpc = npc;
         string interactionText = npc.Interact();
-        npc.ShowPersistentDialogue(interactionText);
+        string displayText = interactionText;
+
+        if (ritualManager != null && ritualManager.TryStartRitual(npc))
+        {
+            displayText = $"{interactionText}\n\nНачинаем ритуал...";
+        }
+
+        npc.ShowPersistentDialogue(displayText);
     }
 
     private void AskNpcQuestion(NPCQuestionType questionType)
@@ -282,6 +329,110 @@ public class PlayerController : MonoBehaviour
         }
 
         activeDialogueNpc.ShowPersistentDialogue(activeDialogueNpc.GetQuestionResponse(questionType, playerProfile));
+    }
+
+    private void HandleRitualItemSelection()
+    {
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            SelectRitualItem(RitualItemType.Necklace);
+        }
+        else if (Input.GetKeyDown(KeyCode.F2))
+        {
+            SelectRitualItem(RitualItemType.Amulet);
+        }
+        else if (Input.GetKeyDown(KeyCode.F3))
+        {
+            SelectRitualItem(RitualItemType.Grimoire);
+        }
+        else if (Input.GetKeyDown(KeyCode.F4))
+        {
+            SelectRitualItem(RitualItemType.Cross);
+        }
+        else if (Input.GetKeyDown(KeyCode.F5))
+        {
+            SelectRitualItem(RitualItemType.Wand);
+        }
+    }
+
+    private void HandleRitualActionSelection()
+    {
+        if (!IsRitualActionModifierPressed())
+        {
+            return;
+        }
+
+        if (IsAnyActionHotkeyPressed(KeyCode.Alpha1, KeyCode.Keypad1))
+        {
+            SelectRitualAction(RitualActionType.EquipOnNpc);
+        }
+        else if (IsAnyActionHotkeyPressed(KeyCode.Alpha2, KeyCode.Keypad2))
+        {
+            SelectRitualAction(RitualActionType.HoldNearNpc);
+        }
+        else if (IsAnyActionHotkeyPressed(KeyCode.Alpha3, KeyCode.Keypad3))
+        {
+            SelectRitualAction(RitualActionType.ReadIncantation);
+        }
+        else if (IsAnyActionHotkeyPressed(KeyCode.Alpha4, KeyCode.Keypad4))
+        {
+            SelectRitualAction(RitualActionType.CircleAroundNpc);
+        }
+        else if (IsAnyActionHotkeyPressed(KeyCode.Alpha5, KeyCode.Keypad5))
+        {
+            SelectRitualAction(RitualActionType.PlaceNearby);
+        }
+        else if (IsAnyActionHotkeyPressed(KeyCode.Alpha6, KeyCode.Keypad6))
+        {
+            SelectRitualAction(RitualActionType.TouchNpc);
+        }
+        else if (IsAnyActionHotkeyPressed(KeyCode.Alpha7, KeyCode.Keypad7))
+        {
+            SelectRitualAction(RitualActionType.BreakItem);
+        }
+        else if (IsAnyActionHotkeyPressed(KeyCode.Alpha8, KeyCode.Keypad8))
+        {
+            SelectRitualAction(RitualActionType.MarkGround);
+        }
+    }
+
+    private void PerformRitualStep()
+    {
+        if (ritualManager == null)
+        {
+            Debug.LogWarning("RitualManager is not available.");
+            return;
+        }
+
+        if (activeDialogueNpc == null)
+        {
+            Debug.Log("Ritual Debug | No active NPC dialogue target.");
+            return;
+        }
+
+        ritualManager.TryPerformStep(activeDialogueNpc, selectedRitualItem, selectedRitualAction);
+    }
+
+    private void SelectRitualItem(RitualItemType item)
+    {
+        selectedRitualItem = item;
+        Debug.Log($"Ritual Debug | Selected item: {selectedRitualItem}");
+    }
+
+    private void SelectRitualAction(RitualActionType action)
+    {
+        selectedRitualAction = action;
+        Debug.Log($"Ritual Debug | Selected action: {selectedRitualAction}");
+    }
+
+    private static bool IsRitualActionModifierPressed()
+    {
+        return Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+    }
+
+    private static bool IsAnyActionHotkeyPressed(KeyCode primaryKey, KeyCode secondaryKey)
+    {
+        return Input.GetKeyDown(primaryKey) || Input.GetKeyDown(secondaryKey);
     }
 
     private void UpdateAnimator()
