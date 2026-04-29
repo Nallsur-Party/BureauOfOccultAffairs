@@ -16,6 +16,7 @@ public class DiarySymptomCategoryPanel : MonoBehaviour
     [SerializeField] private Transform buttonContainer;
     [SerializeField] private TMP_Text observedSymptomsText;
     [SerializeField] private TMP_Text problemsOutputText;
+    [SerializeField] private TMP_Text possibleSymptomsOutputText;
     [SerializeField] private string targetLabelName = "Categoria";
     [SerializeField] private string targetSymptomLabelName = "symptomes";
     [SerializeField] private bool loadOnAwake = true;
@@ -24,6 +25,7 @@ public class DiarySymptomCategoryPanel : MonoBehaviour
     private NPCProblemCatalog problemCatalog;
     private Dictionary<string, string> symptomTextById = new Dictionary<string, string>();
     private Dictionary<Button, UnityAction> symptomButtonHandlers = new Dictionary<Button, UnityAction>();
+    private readonly List<ProblemRowEntry> problemRows = new List<ProblemRowEntry>();
     private string lastObservedSymptomsText = string.Empty;
 
     private sealed class CategoryEntry
@@ -31,6 +33,13 @@ public class DiarySymptomCategoryPanel : MonoBehaviour
         public TMP_Text CategoryLabel;
         public Transform EntryRoot;
         public readonly List<TMP_Text> SymptomLabels = new List<TMP_Text>();
+    }
+
+    private sealed class ProblemRowEntry
+    {
+        public Transform RowRoot;
+        public TMP_Text ProblemLabel;
+        public TMP_Text KnownSymptomsLabel;
     }
 
     private void Awake()
@@ -136,6 +145,10 @@ public class DiarySymptomCategoryPanel : MonoBehaviour
             if (npcProblemsXml == null)
             {
                 problemsOutputText.text = string.Empty;
+                if (possibleSymptomsOutputText != null)
+                {
+                    possibleSymptomsOutputText.text = string.Empty;
+                }
                 lastObservedSymptomsText = observedSymptomsText != null ? observedSymptomsText.text ?? string.Empty : string.Empty;
                 return;
             }
@@ -145,7 +158,16 @@ public class DiarySymptomCategoryPanel : MonoBehaviour
 
         List<string> observedSymptoms = ParseObservedSymptoms();
         lastObservedSymptomsText = observedSymptomsText != null ? observedSymptomsText.text ?? string.Empty : string.Empty;
+        if (TryRefreshProblemRows(observedSymptoms))
+        {
+            return;
+        }
+
         problemsOutputText.text = BuildProblemsOutput(observedSymptoms);
+        if (possibleSymptomsOutputText != null)
+        {
+            possibleSymptomsOutputText.text = BuildPossibleSymptomsOutput(observedSymptoms);
+        }
     }
 
     private string BuildProblemsOutput(List<string> observedSymptoms)
@@ -166,12 +188,7 @@ public class DiarySymptomCategoryPanel : MonoBehaviour
             }
 
             bool isCompatible = IsProblemCompatible(problem, observedSymptoms);
-            string symptomList = problem.Symptoms != null && problem.Symptoms.Count > 0
-                ? string.Join(", ", problem.Symptoms)
-                : string.Empty;
-            string line = string.IsNullOrWhiteSpace(symptomList)
-                ? problem.Name
-                : $"{problem.Name}: {symptomList}";
+            string line = problem.Name;
 
             if (!isCompatible)
             {
@@ -182,6 +199,148 @@ public class DiarySymptomCategoryPanel : MonoBehaviour
         }
 
         return string.Join("\n", lines);
+    }
+
+    private string BuildPossibleSymptomsOutput(List<string> observedSymptoms)
+    {
+        if (problemCatalog == null || problemCatalog.Problems.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        List<string> lines = new List<string>();
+
+        for (int i = 0; i < problemCatalog.Problems.Count; i++)
+        {
+            NPCProblemDefinition problem = problemCatalog.Problems[i];
+            if (problem == null)
+            {
+                continue;
+            }
+
+            bool isCompatible = IsProblemCompatible(problem, observedSymptoms);
+            string symptomLine = problem.Symptoms != null && problem.Symptoms.Count > 0
+                ? string.Join(", ", problem.Symptoms)
+                : string.Empty;
+
+            if (!isCompatible)
+            {
+                symptomLine = $"<s>{symptomLine}</s>";
+            }
+
+            lines.Add(symptomLine);
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    private bool TryRefreshProblemRows(List<string> observedSymptoms)
+    {
+        ProblemRowEntry templateRow = GetProblemRowTemplate();
+        if (templateRow == null || templateRow.RowRoot == null || templateRow.ProblemLabel == null || templateRow.KnownSymptomsLabel == null)
+        {
+            return false;
+        }
+
+        Transform rowsContainer = templateRow.RowRoot.parent;
+        if (rowsContainer == null || problemCatalog == null)
+        {
+            return false;
+        }
+
+        EnsureProblemRowCount(rowsContainer, templateRow, problemCatalog.Problems.Count);
+
+        for (int i = 0; i < problemRows.Count; i++)
+        {
+            ProblemRowEntry row = problemRows[i];
+            if (row == null || row.RowRoot == null || row.ProblemLabel == null || row.KnownSymptomsLabel == null)
+            {
+                continue;
+            }
+
+            bool hasProblem = i < problemCatalog.Problems.Count;
+            row.RowRoot.gameObject.SetActive(hasProblem);
+
+            if (!hasProblem)
+            {
+                continue;
+            }
+
+            NPCProblemDefinition problem = problemCatalog.Problems[i];
+            bool isCompatible = IsProblemCompatible(problem, observedSymptoms);
+            string problemText = problem != null ? problem.Name : string.Empty;
+            string symptomText = problem != null && problem.Symptoms != null
+                ? string.Join(", ", problem.Symptoms)
+                : string.Empty;
+
+            row.ProblemLabel.text = isCompatible ? problemText : $"<s>{problemText}</s>";
+            row.KnownSymptomsLabel.text = isCompatible ? symptomText : $"<s>{symptomText}</s>";
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(rowsContainer as RectTransform);
+        return true;
+    }
+
+    private ProblemRowEntry GetProblemRowTemplate()
+    {
+        if (problemRows.Count > 0 && problemRows[0] != null)
+        {
+            return problemRows[0];
+        }
+
+        if (problemsOutputText == null || possibleSymptomsOutputText == null)
+        {
+            return null;
+        }
+
+        Transform rowRoot = problemsOutputText.transform.parent;
+        if (rowRoot == null || rowRoot != possibleSymptomsOutputText.transform.parent)
+        {
+            return null;
+        }
+
+        TMP_Text problemLabel = FindTextByName(rowRoot, "Problems") ?? problemsOutputText;
+        TMP_Text knownSymptomsLabel = FindTextByName(rowRoot, "KnownSymptoms") ?? possibleSymptomsOutputText;
+
+        ProblemRowEntry templateRow = new ProblemRowEntry
+        {
+            RowRoot = rowRoot,
+            ProblemLabel = problemLabel,
+            KnownSymptomsLabel = knownSymptomsLabel
+        };
+
+        problemRows.Add(templateRow);
+        return templateRow;
+    }
+
+    private void EnsureProblemRowCount(Transform rowsContainer, ProblemRowEntry templateRow, int requiredCount)
+    {
+        if (rowsContainer == null || templateRow == null)
+        {
+            return;
+        }
+
+        while (problemRows.Count < requiredCount)
+        {
+            Transform clone = Instantiate(templateRow.RowRoot, rowsContainer);
+            clone.SetAsLastSibling();
+            clone.gameObject.SetActive(true);
+
+            ProblemRowEntry clonedRow = new ProblemRowEntry
+            {
+                RowRoot = clone,
+                ProblemLabel = FindTextByName(clone, "Problems"),
+                KnownSymptomsLabel = FindTextByName(clone, "KnownSymptoms")
+            };
+
+            if (clonedRow.ProblemLabel == null || clonedRow.KnownSymptomsLabel == null)
+            {
+                Destroy(clone.gameObject);
+                break;
+            }
+
+            problemRows.Add(clonedRow);
+        }
     }
 
     private bool IsProblemCompatible(NPCProblemDefinition problem, List<string> observedSymptoms)
