@@ -7,6 +7,10 @@ public class NPCSpawner : MonoBehaviour
     [SerializeField] private Transform spawnParent;
     [SerializeField] private NPCGenerator npcGenerator;
     [SerializeField] private NPCQueueManager npcQueueManager;
+    [SerializeField] private Transform routeRoot;
+    [SerializeField] private Transform startPoint;
+    [SerializeField] private Transform counterPoint;
+    [SerializeField] private Transform[] exitPoints;
 
     private void Awake()
     {
@@ -19,6 +23,8 @@ public class NPCSpawner : MonoBehaviour
         {
             npcQueueManager = FindObjectOfType<NPCQueueManager>();
         }
+
+        ResolveRouteReferences();
 
         if (npcGenerator == null)
         {
@@ -59,8 +65,9 @@ public class NPCSpawner : MonoBehaviour
 
         // Генерируем данные NPC используя существующий generator
         NPC generatedNpc = GenerateUniqueNPC();
-        
+
         npcOrderVisitor.SetNpcData(generatedNpc);
+        npcOrderVisitor.ConfigureRoute(startPoint, counterPoint, exitPoints, true);
 
         // Регистрируем NPC в очереди
         if (npcQueueManager != null)
@@ -88,6 +95,42 @@ public class NPCSpawner : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             SpawnNPC();
+        }
+    }
+
+    private void ResolveRouteReferences()
+    {
+        if (routeRoot == null)
+        {
+            GameObject routeRootObject = GameObject.Find("WayPoints");
+            if (routeRootObject != null)
+            {
+                routeRoot = routeRootObject.transform;
+            }
+        }
+
+        if (routeRoot == null)
+        {
+            return;
+        }
+
+        if (startPoint == null)
+        {
+            startPoint = routeRoot.Find("StartPoint");
+        }
+
+        if (counterPoint == null)
+        {
+            counterPoint = routeRoot.Find("CounterPoint");
+        }
+
+        if (exitPoints == null || exitPoints.Length == 0)
+        {
+            exitPoints = new Transform[]
+            {
+                routeRoot.Find("ExitPoint_Z"),
+                routeRoot.Find("ExitPoint_N")
+            };
         }
     }
 }

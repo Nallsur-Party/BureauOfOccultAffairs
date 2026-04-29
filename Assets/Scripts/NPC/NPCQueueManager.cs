@@ -48,6 +48,40 @@ public class NPCQueueManager : MonoBehaviour
         return null;
     }
 
+    public void RefreshQueuePosition(NpcOrderVisitor npc)
+    {
+        if (npc == null || !npcQueue.Contains(npc))
+        {
+            return;
+        }
+
+        int index = 0;
+        foreach (NpcOrderVisitor current in npcQueue)
+        {
+            if (current == npc)
+            {
+                break;
+            }
+            index++;
+        }
+
+        if (index == 0)
+        {
+            npc.SendToCounter();
+            return;
+        }
+
+        if (queuePoints != null && queuePoints.Length > 0)
+        {
+            Transform queuePoint = index - 1 < queuePoints.Length ? queuePoints[index - 1] : queuePoints[queuePoints.Length - 1];
+            if (queuePoint != null)
+            {
+                Vector3 queuePosition = GetRandomPositionInQueuePoint(queuePoint);
+                npc.SendToQueuePosition(queuePosition);
+            }
+        }
+    }
+
     private void UpdateQueueTargets()
     {
         if (npcQueue.Count == 0)

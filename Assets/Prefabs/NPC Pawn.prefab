@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3728247049770033207}
   - component: {fileID: 4317440973462819152}
   - component: {fileID: 963012411273868691}
+  - component: {fileID: 2397609147594666894}
   m_Layer: 6
   m_Name: NPC Pawn
   m_TagString: Untagged
@@ -115,7 +116,7 @@ MonoBehaviour:
   facesRightByDefault: 1
   animator: {fileID: 963012411273868691}
   lookAtPlayerRadius: 2
-  dialogueBubble: {fileID: 0}
+  dialogueBubble: {fileID: 6643285303499785997}
   npcGenerator: {fileID: 0}
   generateNpcDataOnAwake: 0
   npcData:
@@ -139,6 +140,7 @@ MonoBehaviour:
   onLeftScene:
     m_PersistentCalls:
       m_Calls: []
+  pushDistance: 1
 --- !u!136 &4317440973462819152
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -158,10 +160,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1
+  m_Radius: 0.2564764
+  m_Height: 1.7437077
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: -0.032645226, y: 0.0075092316, z: 0}
 --- !u!95 &963012411273868691
 Animator:
   serializedVersion: 5
@@ -183,6 +185,33 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!54 &2397609147594666894
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3188153488741869461}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 122
+  m_CollisionDetection: 0
 --- !u!1001 &588857173595975356
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -262,3 +291,15 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 588857173595975356}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6643285303499785997 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6061205953872488881, guid: d05525c76a1f62e42b21beda72b7724a,
+    type: 3}
+  m_PrefabInstance: {fileID: 588857173595975356}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e49d5db60fa9260409cd202d02a955dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

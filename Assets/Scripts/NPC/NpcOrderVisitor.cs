@@ -9,6 +9,7 @@ public class NpcOrderVisitor : MonoBehaviour
         GoingToCounter,
         WaitingInQueue,
         WaitingAtCounter,
+        PushingAway,
         Leaving
     }
 
@@ -51,6 +52,9 @@ public class NpcOrderVisitor : MonoBehaviour
     [SerializeField] private UnityEvent onReachedCounter;
     [SerializeField] private UnityEvent onLeftScene;
 
+    [Header("Push")]
+    [SerializeField] private float pushDistance = 1f;
+
     private VisitorState currentState = VisitorState.Idle;
     private Transform currentTarget;
     private bool useCustomTarget;
@@ -58,6 +62,9 @@ public class NpcOrderVisitor : MonoBehaviour
     private Vector3 lastFrameVelocity = Vector3.zero;
     private PlayerController playerController;
     private NPCQueueManager npcQueueManager;
+    private VisitorState previousState;
+    private bool isPushed = false;
+    private Vector3 queuePosition;
 
     public bool IsWaitingAtCounter => currentState == VisitorState.WaitingAtCounter;
     public bool IsInQueue => currentState == VisitorState.WaitingInQueue;
@@ -109,6 +116,47 @@ public class NpcOrderVisitor : MonoBehaviour
         {
             SendToCounter();
         }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Player") && currentState != VisitorState.PushingAway)
+        {
+            PushAway();
+        }
+    }
+
+    private void PushAway()
+    {
+        // Сохранить предыдущее состояние
+        previousState = currentState;
+
+        // Выбрать случайное направление
+        Vector3 direction = Random.insideUnitSphere;
+        direction.y = 0; // Поскольку keepCurrentY
+        direction = direction.normalized;
+
+        // Проверить препятствия с помощью Raycast
+        if (Physics.Raycast(transform.position, direction, pushDistance))
+        {
+            // Если препятствие, попробовать другое направление до 10 раз
+            for (int i = 0; i < 10; i++)
+            {
+                direction = Random.insideUnitSphere;
+                direction.y = 0;
+                direction = direction.normalized;
+                if (!Physics.Raycast(transform.position, direction, pushDistance))
+                {
+                    break;
+                }
+            }
+        }
+
+        // Установить цель
+        Vector3 targetPos = transform.position + direction * pushDistance;
+        SetTargetPosition(targetPos);
+        currentState = VisitorState.PushingAway;
+        isPushed = true;
     }
 
     public void GenerateNpcData()
@@ -172,6 +220,18 @@ public class NpcOrderVisitor : MonoBehaviour
         if (renameGameObjectToNpcName && !string.IsNullOrWhiteSpace(npcData.Name))
         {
             gameObject.name = $"NPC - {npcData.Name}";
+        }
+    }
+
+    public void ConfigureRoute(Transform startPoint, Transform counterPoint, Transform[] exitPoints, bool snapToStart = false)
+    {
+        this.startPoint = startPoint;
+        this.counterPoint = counterPoint;
+        this.exitPoints = exitPoints;
+
+        if (snapToStart && startPoint != null)
+        {
+            transform.position = GetTargetPosition(startPoint);
         }
     }
 
@@ -286,6 +346,7 @@ public class NpcOrderVisitor : MonoBehaviour
 
     public void SendToQueuePosition(Vector3 queuePosition)
     {
+        this.queuePosition = queuePosition;
         SetTargetPosition(queuePosition);
         currentState = VisitorState.WaitingInQueue;
     }
@@ -354,6 +415,31 @@ public class NpcOrderVisitor : MonoBehaviour
             case VisitorState.WaitingInQueue:
                 currentState = VisitorState.WaitingInQueue;
                 ClearTarget();
+                break;
+
+            case VisitorState.PushingAway:
+                currentState = previousState;
+                isPushed = false;
+                switch (previousState)
+                {
+                    case VisitorState.WaitingInQueue:
+                        if (npcQueueManager != null)
+                        {
+                            npcQueueManager.RefreshQueuePosition(this);
+                        }
+                        else
+                        {
+                            SendToQueuePosition(queuePosition);
+                        }
+                        break;
+                    case VisitorState.WaitingAtCounter:
+                    case VisitorState.GoingToCounter:
+                        SendToCounter();
+                        break;
+                    default:
+                        ClearTarget();
+                        break;
+                }
                 break;
 
             case VisitorState.Leaving:
@@ -469,12 +555,13 @@ public class NpcOrderVisitor : MonoBehaviour
         bool isLookingDown = false;
         bool isLookingHorizontal = false;
         bool isPlayerNear = false;
+        bool canLookAtPlayer = false;
         if (playerController != null)
         {
             Vector3 playerPosition = playerController.transform.position;
             float distanceToPlayer = Vector3.Distance(transform.position, playerPosition);
             isPlayerNear = distanceToPlayer <= lookAtPlayerRadius;
-            bool canLookAtPlayer = isPlayerNear && (currentState == VisitorState.WaitingAtCounter || currentState == VisitorState.WaitingInQueue);
+            canLookAtPlayer = isPlayerNear && (currentState == VisitorState.WaitingAtCounter || currentState == VisitorState.WaitingInQueue);
             if (canLookAtPlayer)
             {
                 Vector3 localDirection = transform.InverseTransformDirection((playerPosition - transform.position).normalized);
@@ -496,7 +583,7 @@ public class NpcOrderVisitor : MonoBehaviour
         animator.SetBool(IsMovingBackwardHash, isMovingBackward);
         animator.SetBool(IsLookingDownHash, isLookingDown);
         animator.SetBool(IsLookingHorizontalHash, isLookingHorizontal);
-        animator.SetBool(IsPlayerNearHash, isPlayerNear);
+        animator.SetBool(IsPlayerNearHash, canLookAtPlayer);
     }
 
     private void UpdateLookDirection()

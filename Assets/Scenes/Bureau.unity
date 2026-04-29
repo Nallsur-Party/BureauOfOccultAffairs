@@ -782,6 +782,12 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 851721619}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &883615542 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6392816351400931453, guid: 8fca613b077cc21479c24b3df8c5cb9e,
+    type: 3}
+  m_PrefabInstance: {fileID: 8877891775347984426}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &921714267 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4797499541800125090, guid: 8fca613b077cc21479c24b3df8c5cb9e,
@@ -1236,7 +1242,7 @@ Transform:
   m_GameObject: {fileID: 1248514672}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 19.11, y: 1.3, z: -9.549}
+  m_LocalPosition: {x: 19.11, y: 1.5, z: -9.549}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1465,11 +1471,6 @@ PrefabInstance:
       objectReference: {fileID: 1129110258}
     - target: {fileID: 3728247049770033207, guid: 12ce90bdcae983f418ccea3e8573a6a1,
         type: 3}
-      propertyPath: dialogueBubble
-      value: 
-      objectReference: {fileID: 1586210022}
-    - target: {fileID: 3728247049770033207, guid: 12ce90bdcae983f418ccea3e8573a6a1,
-        type: 3}
       propertyPath: exitPoints.Array.data[0]
       value: 
       objectReference: {fileID: 944556526}
@@ -1513,18 +1514,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1586210012}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1586210022 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6643285303499785997, guid: 12ce90bdcae983f418ccea3e8573a6a1,
-    type: 3}
-  m_PrefabInstance: {fileID: 1586210012}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1586210014}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e49d5db60fa9260409cd202d02a955dd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1591665206
 GameObject:
   m_ObjectHideFlags: 0
@@ -2200,14 +2189,44 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
         type: 3}
+      propertyPath: routeRoot
+      value: 
+      objectReference: {fileID: 883615542}
+    - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: startPoint
+      value: 
+      objectReference: {fileID: 597524240}
+    - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
       propertyPath: spawnParent
       value: 
       objectReference: {fileID: 1248514673}
     - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
         type: 3}
+      propertyPath: counterPoint
+      value: 
+      objectReference: {fileID: 921714267}
+    - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
       propertyPath: npcPawnPrefab
       value: 
       objectReference: {fileID: 1586210013}
+    - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: exitPoints.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: exitPoints.Array.data[0]
+      value: 
+      objectReference: {fileID: 944556526}
+    - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: exitPoints.Array.data[1]
+      value: 
+      objectReference: {fileID: 509108264}
     - target: {fileID: 7181312806285078053, guid: d481733bff90832419fd7d5445713bb5,
         type: 3}
       propertyPath: m_LocalPosition.x
