@@ -7,6 +7,7 @@ public class NpcOrderVisitor : MonoBehaviour
     {
         Idle,
         GoingToCounter,
+        WaitingInQueue,
         WaitingAtCounter,
         Leaving
     }
@@ -52,11 +53,14 @@ public class NpcOrderVisitor : MonoBehaviour
 
     private VisitorState currentState = VisitorState.Idle;
     private Transform currentTarget;
+    private bool useCustomTarget;
+    private Vector3 customTargetPosition;
     private Vector3 lastFrameVelocity = Vector3.zero;
     private PlayerController playerController;
     private NPCQueueManager npcQueueManager;
 
     public bool IsWaitingAtCounter => currentState == VisitorState.WaitingAtCounter;
+    public bool IsInQueue => currentState == VisitorState.WaitingInQueue;
     public NPC NpcData => npcData;
 
     private void Awake()
@@ -247,14 +251,14 @@ public class NpcOrderVisitor : MonoBehaviour
 
     private void Update()
     {
-        if (currentTarget == null)
+        if (currentTarget == null && !useCustomTarget)
         {
             lastFrameVelocity = Vector3.zero;
             UpdateAnimator();
             return;
         }
 
-        Vector3 targetPosition = GetTargetPosition(currentTarget);
+        Vector3 targetPosition = GetTargetPosition();
         Vector3 nextPosition = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
         Vector3 delta = nextPosition - transform.position;
 
@@ -276,8 +280,14 @@ public class NpcOrderVisitor : MonoBehaviour
             return;
         }
 
-        currentTarget = counterPoint;
+        SetTargetTransform(counterPoint);
         currentState = VisitorState.GoingToCounter;
+    }
+
+    public void SendToQueuePosition(Vector3 queuePosition)
+    {
+        SetTargetPosition(queuePosition);
+        currentState = VisitorState.WaitingInQueue;
     }
 
     public void LeaveRandomExit()
@@ -300,7 +310,17 @@ public class NpcOrderVisitor : MonoBehaviour
             return;
         }
 
-        currentTarget = exitPoints[exitIndex];
+        if (npcQueueManager == null)
+        {
+            npcQueueManager = FindObjectOfType<NPCQueueManager>();
+        }
+
+        if (npcQueueManager != null)
+        {
+            npcQueueManager.DequeueNPC(this);
+        }
+
+        SetTargetTransform(exitPoints[exitIndex]);
         currentState = VisitorState.Leaving;
     }
 
@@ -327,16 +347,20 @@ public class NpcOrderVisitor : MonoBehaviour
         {
             case VisitorState.GoingToCounter:
                 currentState = VisitorState.WaitingAtCounter;
-                currentTarget = null;
+                ClearTarget();
                 onReachedCounter.Invoke();
+                break;
+
+            case VisitorState.WaitingInQueue:
+                currentState = VisitorState.WaitingInQueue;
+                ClearTarget();
                 break;
 
             case VisitorState.Leaving:
                 currentState = VisitorState.Idle;
-                currentTarget = null;
+                ClearTarget();
                 onLeftScene.Invoke();
                 HideDialogue();
-                // Удаляем NPC из очереди перед деактивацией
                 if (npcQueueManager != null)
                 {
                     npcQueueManager.DequeueNPC(this);
@@ -348,6 +372,11 @@ public class NpcOrderVisitor : MonoBehaviour
 
     private Vector3 GetTargetPosition(Transform targetPoint)
     {
+        if (targetPoint == null)
+        {
+            return GetTargetPosition();
+        }
+
         Vector3 targetPosition = targetPoint.position;
 
         if (keepCurrentY)
@@ -356,6 +385,46 @@ public class NpcOrderVisitor : MonoBehaviour
         }
 
         return targetPosition;
+    }
+
+    private Vector3 GetTargetPosition()
+    {
+        Vector3 targetPosition;
+
+        if (useCustomTarget)
+        {
+            targetPosition = customTargetPosition;
+        }
+        else
+        {
+            targetPosition = currentTarget != null ? currentTarget.position : transform.position;
+        }
+
+        if (keepCurrentY)
+        {
+            targetPosition.y = transform.position.y;
+        }
+
+        return targetPosition;
+    }
+
+    private void SetTargetTransform(Transform target)
+    {
+        currentTarget = target;
+        useCustomTarget = false;
+    }
+
+    private void SetTargetPosition(Vector3 position)
+    {
+        customTargetPosition = position;
+        useCustomTarget = true;
+        currentTarget = null;
+    }
+
+    private void ClearTarget()
+    {
+        currentTarget = null;
+        useCustomTarget = false;
     }
 
     private void UpdateFacing(Vector3 delta)
