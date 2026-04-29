@@ -38,6 +38,7 @@ public class NpcOrderVisitor : MonoBehaviour
     [SerializeField] private bool facesRightByDefault = true;
     [SerializeField] private Animator animator;
     [SerializeField] private float lookAtPlayerRadius = 2f;
+    [SerializeField] private NPCDialogueBubble dialogueBubble;
 
     [Header("NPC Data")]
     [SerializeField] private NPCGenerator npcGenerator;
@@ -77,6 +78,11 @@ public class NpcOrderVisitor : MonoBehaviour
         if (npcGenerator == null)
         {
             npcGenerator = FindObjectOfType<NPCGenerator>();
+        }
+
+        if (dialogueBubble == null)
+        {
+            dialogueBubble = GetComponentInChildren<NPCDialogueBubble>();
         }
 
         if (generateNpcDataOnAwake)
@@ -122,6 +128,26 @@ public class NpcOrderVisitor : MonoBehaviour
 
         string interactionText = GetInteractionText();
         DebugLogNpcState("Interact", interactionText);
+    }
+
+    public void ShowDialogue(string message)
+    {
+        if (dialogueBubble == null)
+        {
+            return;
+        }
+
+        dialogueBubble.Show(message);
+    }
+
+    public void HideDialogue()
+    {
+        if (dialogueBubble == null)
+        {
+            return;
+        }
+
+        dialogueBubble.Hide();
     }
 
     public void SetNpcData(NPC npc)
@@ -303,6 +329,7 @@ public class NpcOrderVisitor : MonoBehaviour
                 currentState = VisitorState.Idle;
                 currentTarget = null;
                 onLeftScene.Invoke();
+                HideDialogue();
                 gameObject.SetActive(false);
                 break;
         }

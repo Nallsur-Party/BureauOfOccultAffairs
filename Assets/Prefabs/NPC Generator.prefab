@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7181312806285078053}
   - component: {fileID: 6380206237659848771}
+  - component: {fileID: 3708043392199942633}
   m_Layer: 0
   m_Name: NPC Generator
   m_TagString: Untagged
@@ -76,3 +77,18 @@ MonoBehaviour:
     lieTokens: 0
     detectiveQuestionTokens: 0
     spentDetectiveQuestionCount: 0
+--- !u!114 &3708043392199942633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1668305320217490482}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f702c157436754041b6f5e3f358e2703, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  npcPawnPrefab: {fileID: 0}
+  spawnParent: {fileID: 0}
+  npcGenerator: {fileID: 6380206237659848771}

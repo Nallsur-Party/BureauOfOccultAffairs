@@ -37,9 +37,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float interactionRadius = 1.5f;
     [SerializeField] private LayerMask interactionMask = ~0;
     [SerializeField] private GameObject interactionPrompt;
-    [SerializeField] private GameObject dialogueWindow;
-    [SerializeField] private TMP_Text dialogueText;
-    [SerializeField] private float dialogueHideDelay = 2f;
 
     private Rigidbody rb;
     private PlayerProfile playerProfile;
@@ -52,7 +49,6 @@ public class PlayerController : MonoBehaviour
     private bool isSprinting;
     private NpcOrderVisitor currentInteractableNpc;
     private NpcOrderVisitor activeDialogueNpc;
-    private float dialogueHideTimer = -1f;
     private NPCSpawner npcSpawner;
 
     private void Awake()
@@ -66,7 +62,6 @@ public class PlayerController : MonoBehaviour
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         SetInteractionPromptVisible(false);
-        SetDialogueVisible(false);
     }
 
     private void Update()
@@ -90,11 +85,6 @@ public class PlayerController : MonoBehaviour
         if (currentInteractableNpc == null)
         {
             activeDialogueNpc = null;
-            UpdateDialogueHideTimer();
-        }
-        else
-        {
-            dialogueHideTimer = -1f;
         }
     }
 
@@ -275,7 +265,7 @@ public class PlayerController : MonoBehaviour
     {
         activeDialogueNpc = npc;
         npc.Interact();
-        ShowDialogue(npc.GetInteractionText());
+        npc.ShowDialogue(npc.GetInteractionText());
     }
 
     private void AskNpcQuestion(NPCQuestionType questionType)
@@ -285,7 +275,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        ShowDialogue(activeDialogueNpc.GetQuestionResponse(questionType, playerProfile));
+        activeDialogueNpc.ShowDialogue(activeDialogueNpc.GetQuestionResponse(questionType, playerProfile));
     }
 
     private void UpdateAnimator()
@@ -378,45 +368,7 @@ public class PlayerController : MonoBehaviour
 
     private void ShowDialogue(string message)
     {
-        if (dialogueText != null)
-        {
-            dialogueText.text = message;
-        }
-
-        dialogueHideTimer = -1f;
-        SetDialogueVisible(true);
-    }
-
-    private void UpdateDialogueHideTimer()
-    {
-        if (dialogueWindow == null || !dialogueWindow.activeSelf)
-        {
-            return;
-        }
-
-        if (dialogueHideTimer < 0f)
-        {
-            dialogueHideTimer = dialogueHideDelay;
-            return;
-        }
-
-        dialogueHideTimer -= Time.deltaTime;
-
-        if (dialogueHideTimer <= 0f)
-        {
-            dialogueHideTimer = -1f;
-            SetDialogueVisible(false);
-        }
-    }
-
-    private void SetDialogueVisible(bool isVisible)
-    {
-        if (dialogueWindow == null || dialogueWindow.activeSelf == isVisible)
-        {
-            return;
-        }
-
-        dialogueWindow.SetActive(isVisible);
+        // Dialogue display is now handled by NPCDialogueBubble on the NPC pawn.
     }
 
     private void OnDrawGizmosSelected()

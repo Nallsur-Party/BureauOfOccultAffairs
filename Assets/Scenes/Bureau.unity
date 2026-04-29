@@ -376,18 +376,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2028111453}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &194800284 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5505239864713682816, guid: 12ce90bdcae983f418ccea3e8573a6a1,
-    type: 3}
-  m_PrefabInstance: {fileID: 1586210012}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &251117447
 GameObject:
   m_ObjectHideFlags: 0
@@ -482,12 +470,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2033053607}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &412154127 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7864858586301827707, guid: 12ce90bdcae983f418ccea3e8573a6a1,
-    type: 3}
-  m_PrefabInstance: {fileID: 1586210012}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &452424285
 GameObject:
   m_ObjectHideFlags: 0
@@ -1571,11 +1553,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: NPC Pawn
       objectReference: {fileID: 0}
-    - target: {fileID: 3188153488741869461, guid: 12ce90bdcae983f418ccea3e8573a6a1,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 3728247049770033207, guid: 12ce90bdcae983f418ccea3e8573a6a1,
         type: 3}
       propertyPath: startPoint
@@ -1601,16 +1578,6 @@ PrefabInstance:
       propertyPath: exitPoints.Array.data[1]
       value: 
       objectReference: {fileID: 509108264}
-    - target: {fileID: 7909096132338799253, guid: 12ce90bdcae983f418ccea3e8573a6a1,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.99221975
-      objectReference: {fileID: 0}
-    - target: {fileID: 7909096132338799253, guid: 12ce90bdcae983f418ccea3e8573a6a1,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0.12449897
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1622,6 +1589,24 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1586210012}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1586210014 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5493362827371495991, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+    type: 3}
+  m_PrefabInstance: {fileID: 1586210012}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1586210015 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8172811251034079366, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+    type: 3}
+  m_PrefabInstance: {fileID: 1586210012}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1586210018 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2564011892817531565, guid: 12ce90bdcae983f418ccea3e8573a6a1,
@@ -1919,12 +1904,12 @@ PrefabInstance:
         type: 3}
       propertyPath: dialogueText
       value: 
-      objectReference: {fileID: 194800284}
+      objectReference: {fileID: 1586210015}
     - target: {fileID: 5112496190937396943, guid: 3ed2440a234f459438767f86520d7af5,
         type: 3}
       propertyPath: dialogueWindow
       value: 
-      objectReference: {fileID: 412154127}
+      objectReference: {fileID: 1586210014}
     - target: {fileID: 9175066928066003693, guid: 3ed2440a234f459438767f86520d7af5,
         type: 3}
       propertyPath: m_Name
