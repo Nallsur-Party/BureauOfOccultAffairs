@@ -1,12 +1,17 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler
+public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [SerializeField] private RectTransform dragTarget;
     [SerializeField] private Canvas parentCanvas;
+    [SerializeField] private bool disableRaycasterWhileDragging = true;
 
     private Vector2 dragOffset;
+    private RectTransform referenceRect;
+    private GraphicRaycaster canvasRaycaster;
+    private bool restoreRaycasterAfterDrag;
 
     private void Awake()
     {
@@ -19,6 +24,17 @@ public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler
         {
             parentCanvas = GetComponentInParent<Canvas>();
         }
+
+        referenceRect = dragTarget != null && dragTarget.parent is RectTransform rectTransform
+            ? rectTransform
+            : parentCanvas != null
+                ? parentCanvas.transform as RectTransform
+                : null;
+
+        if (parentCanvas != null)
+        {
+            canvasRaycaster = parentCanvas.GetComponent<GraphicRaycaster>();
+        }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -30,6 +46,12 @@ public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler
 
         dragTarget.SetAsLastSibling();
         dragOffset = dragTarget.anchoredPosition - localPointerPosition;
+
+        if (disableRaycasterWhileDragging && canvasRaycaster != null && canvasRaycaster.enabled)
+        {
+            canvasRaycaster.enabled = false;
+            restoreRaycasterAfterDrag = true;
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -39,7 +61,23 @@ public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler
             return;
         }
 
-        dragTarget.anchoredPosition = ClampToBounds(localPointerPosition + dragOffset);
+        Vector2 nextPosition = ClampToBounds(localPointerPosition + dragOffset);
+        if ((dragTarget.anchoredPosition - nextPosition).sqrMagnitude <= 0.0001f)
+        {
+            return;
+        }
+
+        dragTarget.anchoredPosition = nextPosition;
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        RestoreRaycaster();
+    }
+
+    private void OnDisable()
+    {
+        RestoreRaycaster();
     }
 
     private bool CanDrag()
@@ -59,17 +97,11 @@ public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler
             return false;
         }
 
-        RectTransform referenceRect = dragTarget.parent as RectTransform;
-        if (referenceRect == null)
-        {
-            referenceRect = parentCanvas.transform as RectTransform;
-        }
-
         Camera eventCamera = parentCanvas.renderMode == RenderMode.ScreenSpaceOverlay
             ? null
             : eventData.pressEventCamera;
 
-        return RectTransformUtility.ScreenPointToLocalPointInRectangle(
+        return referenceRect != null && RectTransformUtility.ScreenPointToLocalPointInRectangle(
             referenceRect,
             eventData.position,
             eventCamera,
@@ -79,12 +111,6 @@ public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler
 
     private Vector2 ClampToBounds(Vector2 anchoredPosition)
     {
-        RectTransform referenceRect = dragTarget.parent as RectTransform;
-        if (referenceRect == null)
-        {
-            referenceRect = parentCanvas.transform as RectTransform;
-        }
-
         if (referenceRect == null)
         {
             return anchoredPosition;
@@ -102,5 +128,16 @@ public class UIDraggablePanel : MonoBehaviour, IBeginDragHandler, IDragHandler
         anchoredPosition.x = Mathf.Clamp(anchoredPosition.x, minX, maxX);
         anchoredPosition.y = Mathf.Clamp(anchoredPosition.y, minY, maxY);
         return anchoredPosition;
+    }
+
+    private void RestoreRaycaster()
+    {
+        if (!restoreRaycasterAfterDrag || canvasRaycaster == null)
+        {
+            return;
+        }
+
+        canvasRaycaster.enabled = true;
+        restoreRaycasterAfterDrag = false;
     }
 }
