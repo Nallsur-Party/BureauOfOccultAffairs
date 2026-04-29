@@ -12,7 +12,7 @@ TagManager:
   - Water
   - UI
   - NPC
-  - 
+  - Player
   - 
   - 
   - 
@@ -40,4 +40,13 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Player
+    uniqueID: 3015473157
+    locked: 0
+  - name: Characters
+    uniqueID: 3588095647
+    locked: 0
+  - name: Layers
+    uniqueID: 2074676219
     locked: 0

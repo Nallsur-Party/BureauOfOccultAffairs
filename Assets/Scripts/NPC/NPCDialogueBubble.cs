@@ -8,9 +8,12 @@ public class NPCDialogueBubble : MonoBehaviour
     [SerializeField] private float hideDelay = 2f;
 
     private float hideTimer = -1f;
+    private Canvas[] cachedCanvases;
+    private Renderer[] cachedRenderers;
 
     private void Awake()
     {
+        CacheVisualComponents();
         SetVisible(false);
     }
 
@@ -69,6 +72,53 @@ public class NPCDialogueBubble : MonoBehaviour
             return;
         }
 
+        if (bubbleRoot == gameObject)
+        {
+            SetComponentsVisible(visible);
+            return;
+        }
+
         bubbleRoot.SetActive(visible);
+    }
+
+    private void CacheVisualComponents()
+    {
+        if (bubbleRoot == null)
+        {
+            return;
+        }
+
+        cachedCanvases = bubbleRoot.GetComponentsInChildren<Canvas>(true);
+        cachedRenderers = bubbleRoot.GetComponentsInChildren<Renderer>(true);
+    }
+
+    private void SetComponentsVisible(bool visible)
+    {
+        if (cachedCanvases == null || cachedRenderers == null)
+        {
+            CacheVisualComponents();
+        }
+
+        if (cachedCanvases != null)
+        {
+            for (int i = 0; i < cachedCanvases.Length; i++)
+            {
+                if (cachedCanvases[i] != null)
+                {
+                    cachedCanvases[i].enabled = visible;
+                }
+            }
+        }
+
+        if (cachedRenderers != null)
+        {
+            for (int i = 0; i < cachedRenderers.Length; i++)
+            {
+                if (cachedRenderers[i] != null)
+                {
+                    cachedRenderers[i].enabled = visible;
+                }
+            }
+        }
     }
 }
