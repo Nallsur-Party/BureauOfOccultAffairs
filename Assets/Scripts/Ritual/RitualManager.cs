@@ -36,6 +36,14 @@ public class RitualManager : MonoBehaviour
         }
     }
 
+    public bool HasActiveRitual(NpcOrderVisitor npc)
+    {
+        return npc != null
+            && progressByNpc.TryGetValue(npc, out RitualProgressState state)
+            && state != null
+            && state.Solution != null;
+    }
+
     public bool TryStartRitual(NpcOrderVisitor npc)
     {
         if (npc == null || npc.NpcData == null)
@@ -80,34 +88,29 @@ public class RitualManager : MonoBehaviour
 
         if (npc.NpcData.IsCured)
         {
-            npc.ShowPersistentDialogue("Со мной уже всё в порядке.");
+            npc.ShowDialogue("Со мной уже всё в порядке.");
             LogAttempt(npc, RitualAttemptResult.NpcAlreadyCured, item, action, null);
             return RitualAttemptResult.NpcAlreadyCured;
         }
 
         if (!TryGetSolution(npc, out RitualSolutionDefinition solution))
         {
-            npc.ShowPersistentDialogue("Для этой проблемы нет подходящего ритуала.");
+            npc.ShowDialogue("Для этой проблемы нет подходящего ритуала.");
             LogAttempt(npc, RitualAttemptResult.NoSolution, item, action, null);
             return RitualAttemptResult.NoSolution;
         }
 
         if (!npc.NpcData.IsAlive)
         {
-            npc.ShowPersistentDialogue("Ритуал сорвался. Начни его заново разговором с NPC.");
+            npc.ShowDialogue("Ритуал сорвался. Начни его заново разговором с NPC.");
             LogAttempt(npc, RitualAttemptResult.WrongStep, item, action, "NPC has no health");
             return RitualAttemptResult.WrongStep;
         }
 
         if (!progressByNpc.TryGetValue(npc, out RitualProgressState state) || state == null || state.Solution == null)
         {
-            progressByNpc[npc] = new RitualProgressState
-            {
-                TargetNpc = npc,
-                Solution = solution,
-                NextStepIndex = 0
-            };
-            state = progressByNpc[npc];
+            LogAttempt(npc, RitualAttemptResult.NotStarted, item, action, null);
+            return RitualAttemptResult.NotStarted;
         }
 
         RitualStepDefinition expectedStep = state.NextStepIndex >= 0 && state.NextStepIndex < state.Solution.Steps.Count
@@ -132,7 +135,7 @@ public class RitualManager : MonoBehaviour
                 failureText += "\nНужно начать ритуал заново.";
             }
 
-            npc.ShowPersistentDialogue(failureText);
+            npc.ShowDialogue(failureText);
             LogAttempt(npc, RitualAttemptResult.WrongStep, item, action, FormatStep(expectedStep));
             return RitualAttemptResult.WrongStep;
         }
@@ -142,14 +145,14 @@ public class RitualManager : MonoBehaviour
         if (state.NextStepIndex >= state.Solution.Steps.Count)
         {
             npc.NpcData.MarkCured();
-            npc.ShowPersistentDialogue("Мне стало легче...");
+            npc.ShowDialogue("Мне стало легче...");
             ClearProgress(npc);
             LogAttempt(npc, RitualAttemptResult.Completed, item, action, FormatStep(expectedStep));
             npc.LeaveRandomExit();
             return RitualAttemptResult.Completed;
         }
 
-        npc.ShowPersistentDialogue("Что-то сработало...");
+        npc.ShowDialogue("Что-то сработало...");
         LogAttempt(npc, RitualAttemptResult.Advanced, item, action, GetExpectedStepDescription(state.Solution, state.NextStepIndex));
         return RitualAttemptResult.Advanced;
     }
@@ -209,6 +212,6 @@ public class RitualManager : MonoBehaviour
 
     private static string FormatStep(RitualStepDefinition step)
     {
-        return step == null ? null : $"{step.Item} + {step.Action}";
+        return step == null ? null : $"{step.Item} + {step.Action.GetDisplayName()}";
     }
 }

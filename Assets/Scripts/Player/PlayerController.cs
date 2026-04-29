@@ -1,5 +1,5 @@
+using System;
 using UnityEngine;
-using TMPro;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(PlayerProfile))]
@@ -56,6 +56,7 @@ public class PlayerController : MonoBehaviour
     private NPCQueueManager npcQueueManager;
     private RitualItemType selectedRitualItem = RitualItemType.Necklace;
     private RitualActionType selectedRitualAction = RitualActionType.EquipOnNpc;
+    private RitualItemType[] ritualItems;
 
     private void Awake()
     {
@@ -72,6 +73,8 @@ public class PlayerController : MonoBehaviour
             GameObject ritualManagerObject = new GameObject("RitualManager");
             ritualManager = ritualManagerObject.AddComponent<RitualManager>();
         }
+
+        ritualItems = (RitualItemType[])Enum.GetValues(typeof(RitualItemType));
 
         rb.constraints = RigidbodyConstraints.FreezeRotation;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -96,18 +99,8 @@ public class PlayerController : MonoBehaviour
         UpdateGroundedState();
         UpdateFacing();
         UpdateAnimator();
+        UpdateDialogueFocus();
         SetInteractionPromptVisible(currentInteractableNpc != null);
-
-        if (activeDialogueNpc != null && currentInteractableNpc != activeDialogueNpc)
-        {
-            if (ritualManager != null)
-            {
-                ritualManager.ClearProgress(activeDialogueNpc);
-            }
-
-            activeDialogueNpc.HideDialogue();
-            activeDialogueNpc = null;
-        }
     }
 
     private void FixedUpdate()
@@ -116,12 +109,12 @@ public class PlayerController : MonoBehaviour
         Vector3 moveDirection = useDepthMovement
             ? new Vector3(moveInput, 0f, depthInput)
             : new Vector3(moveInput, 0f, 0f);
-        
+
         if (moveDirection.sqrMagnitude > 0.01f)
         {
             moveDirection.Normalize();
         }
-        
+
         Vector3 targetPlanarVelocity = moveDirection * (isSprinting ? moveSpeed * sprintMultiplier : moveSpeed);
         Vector3 currentPlanarVelocity = new Vector3(velocity.x, 0f, velocity.z);
         float acceleration = isGrounded ? groundAcceleration : airAcceleration;
@@ -309,49 +302,32 @@ public class PlayerController : MonoBehaviour
             ritualManager.ClearProgress(activeDialogueNpc);
         }
 
-        activeDialogueNpc = npc;
-        string interactionText = npc.Interact();
-        string displayText = interactionText;
-
-        if (ritualManager != null && ritualManager.TryStartRitual(npc))
+        if (activeDialogueNpc != null && activeDialogueNpc != npc)
         {
-            displayText = $"{interactionText}\n\nНачинаем ритуал...";
+            activeDialogueNpc.SetDialogueFocus(false);
         }
 
-        npc.ShowPersistentDialogue(displayText);
+        activeDialogueNpc = npc;
+        npc.ShowDialogue(npc.Interact());
+        npc.SetDialogueFocus(true);
     }
 
     private void AskNpcQuestion(NPCQuestionType questionType)
     {
-        if (activeDialogueNpc == null)
+        if (!IsActiveDialogueNpcInRange())
         {
             return;
         }
 
-        activeDialogueNpc.ShowPersistentDialogue(activeDialogueNpc.GetQuestionResponse(questionType, playerProfile));
+        activeDialogueNpc.ShowDialogue(activeDialogueNpc.GetQuestionResponse(questionType, playerProfile));
+        activeDialogueNpc.SetDialogueFocus(true);
     }
 
     private void HandleRitualItemSelection()
     {
-        if (Input.GetKeyDown(KeyCode.F1))
+        if (Input.GetKeyDown(KeyCode.Q))
         {
-            SelectRitualItem(RitualItemType.Necklace);
-        }
-        else if (Input.GetKeyDown(KeyCode.F2))
-        {
-            SelectRitualItem(RitualItemType.Amulet);
-        }
-        else if (Input.GetKeyDown(KeyCode.F3))
-        {
-            SelectRitualItem(RitualItemType.Grimoire);
-        }
-        else if (Input.GetKeyDown(KeyCode.F4))
-        {
-            SelectRitualItem(RitualItemType.Cross);
-        }
-        else if (Input.GetKeyDown(KeyCode.F5))
-        {
-            SelectRitualItem(RitualItemType.Wand);
+            CycleRitualItem();
         }
     }
 
@@ -404,25 +380,41 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (activeDialogueNpc == null)
+        if (!IsActiveDialogueNpcInRange())
         {
             Debug.Log("Ritual Debug | No active NPC dialogue target.");
             return;
         }
 
-        ritualManager.TryPerformStep(activeDialogueNpc, selectedRitualItem, selectedRitualAction);
+        if (!ritualManager.HasActiveRitual(activeDialogueNpc))
+        {
+            if (ritualManager.TryStartRitual(activeDialogueNpc))
+            {
+                activeDialogueNpc.ShowDialogue("Начинаем ритуал...");
+            }
+
+            activeDialogueNpc.SetDialogueFocus(true);
+            return;
+        }
+
+        RitualAttemptResult result = ritualManager.TryPerformStep(activeDialogueNpc, selectedRitualItem, selectedRitualAction);
+        activeDialogueNpc.SetDialogueFocus(true);
+        if (result == RitualAttemptResult.NotStarted)
+        {
+            Debug.Log("Ritual Debug | Ritual step ignored because the ritual has not been started.");
+        }
     }
 
     private void SelectRitualItem(RitualItemType item)
     {
         selectedRitualItem = item;
-        Debug.Log($"Ritual Debug | Selected item: {selectedRitualItem}");
+        Debug.Log($"Ritual Debug | Cycled selected item to: {selectedRitualItem}");
     }
 
     private void SelectRitualAction(RitualActionType action)
     {
         selectedRitualAction = action;
-        Debug.Log($"Ritual Debug | Selected action: {selectedRitualAction}");
+        Debug.Log($"Ritual Debug | Selected action: {selectedRitualAction.GetDisplayName()} | {selectedRitualAction.GetDescription()}");
     }
 
     private static bool IsRitualActionModifierPressed()
@@ -433,6 +425,44 @@ public class PlayerController : MonoBehaviour
     private static bool IsAnyActionHotkeyPressed(KeyCode primaryKey, KeyCode secondaryKey)
     {
         return Input.GetKeyDown(primaryKey) || Input.GetKeyDown(secondaryKey);
+    }
+
+    private void CycleRitualItem()
+    {
+        if (ritualItems == null || ritualItems.Length == 0)
+        {
+            ritualItems = (RitualItemType[])Enum.GetValues(typeof(RitualItemType));
+        }
+
+        int currentIndex = Array.IndexOf(ritualItems, selectedRitualItem);
+        int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % ritualItems.Length;
+        SelectRitualItem(ritualItems[nextIndex]);
+    }
+
+    private void UpdateDialogueFocus()
+    {
+        if (activeDialogueNpc == null)
+        {
+            return;
+        }
+
+        bool isInRange = currentInteractableNpc == activeDialogueNpc;
+        activeDialogueNpc.SetDialogueFocus(isInRange);
+
+        if (!isInRange && !activeDialogueNpc.IsDialogueVisible)
+        {
+            if (ritualManager != null)
+            {
+                ritualManager.ClearProgress(activeDialogueNpc);
+            }
+
+            activeDialogueNpc = null;
+        }
+    }
+
+    private bool IsActiveDialogueNpcInRange()
+    {
+        return activeDialogueNpc != null && currentInteractableNpc == activeDialogueNpc;
     }
 
     private void UpdateAnimator()

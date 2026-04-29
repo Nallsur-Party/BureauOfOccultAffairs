@@ -256,6 +256,24 @@ public class NpcOrderVisitor : MonoBehaviour
         dialogueBubble.Hide();
     }
 
+    public void SetDialogueFocus(bool focused)
+    {
+        if (dialogueBubble == null)
+        {
+            return;
+        }
+
+        dialogueBubble.SetFocus(focused);
+    }
+
+    public bool IsDialogueVisible
+    {
+        get
+        {
+            return dialogueBubble != null && dialogueBubble.IsVisible;
+        }
+    }
+
     public void SetNpcData(NPC npc)
     {
         if (npc == null)

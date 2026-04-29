@@ -8,6 +8,8 @@ public class NPCDialogueBubble : MonoBehaviour
     [SerializeField] private float hideDelay = 2f;
 
     private float hideTimer = -1f;
+    private bool isFocused;
+    private bool isVisible;
     private Canvas[] cachedCanvases;
     private Renderer[] cachedRenderers;
 
@@ -43,6 +45,7 @@ public class NPCDialogueBubble : MonoBehaviour
         SetVisible(true);
         bubbleText.text = message;
         bubbleText.ForceMeshUpdate();
+        isFocused = false;
         hideTimer = hideDelay;
     }
 
@@ -56,6 +59,7 @@ public class NPCDialogueBubble : MonoBehaviour
         SetVisible(true);
         bubbleText.text = message;
         bubbleText.ForceMeshUpdate();
+        isFocused = true;
         hideTimer = -1f;
     }
 
@@ -69,13 +73,48 @@ public class NPCDialogueBubble : MonoBehaviour
         SetVisible(true);
         bubbleText.text = message;
         bubbleText.ForceMeshUpdate();
+        isFocused = false;
         hideTimer = duration;
     }
 
     public void Hide()
     {
         SetVisible(false);
+        isFocused = false;
         hideTimer = -1f;
+    }
+
+    public void SetFocus(bool focused)
+    {
+        if (bubbleRoot == null || bubbleText == null)
+        {
+            return;
+        }
+
+        isFocused = focused;
+
+        if (focused)
+        {
+            if (isVisible)
+            {
+                hideTimer = -1f;
+            }
+
+            return;
+        }
+
+        if (isVisible && hideTimer < 0f)
+        {
+            hideTimer = hideDelay;
+        }
+    }
+
+    public bool IsVisible
+    {
+        get
+        {
+            return isVisible;
+        }
     }
 
     private void SetVisible(bool visible)
@@ -88,10 +127,12 @@ public class NPCDialogueBubble : MonoBehaviour
         if (bubbleRoot == gameObject)
         {
             SetComponentsVisible(visible);
+            isVisible = visible;
             return;
         }
 
         bubbleRoot.SetActive(visible);
+        isVisible = visible;
     }
 
     private void CacheVisualComponents()

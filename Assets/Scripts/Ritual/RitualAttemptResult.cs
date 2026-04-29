@@ -1,6 +1,7 @@
 public enum RitualAttemptResult
 {
     Started,
+    NotStarted,
     Advanced,
     Completed,
     WrongStep,
