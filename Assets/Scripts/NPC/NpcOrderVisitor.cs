@@ -213,16 +213,17 @@ public class NpcOrderVisitor : MonoBehaviour
         }
     }
 
-    public void Interact()
+    public string Interact()
     {
         if (npcData == null)
         {
             Debug.Log($"NPC {name}: data has not been generated yet.", this);
-            return;
+            return "NPC data has not been generated yet.";
         }
 
         string interactionText = GetInteractionText();
         DebugLogNpcState("Interact", interactionText);
+        return interactionText;
     }
 
     public void ShowDialogue(string message)

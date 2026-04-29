@@ -269,8 +269,8 @@ public class PlayerController : MonoBehaviour
     private void StartNpcConversation(NpcOrderVisitor npc)
     {
         activeDialogueNpc = npc;
-        npc.Interact();
-        npc.ShowDialogue(npc.GetInteractionText());
+        string interactionText = npc.Interact();
+        npc.ShowDialogue(interactionText);
     }
 
     private void AskNpcQuestion(NPCQuestionType questionType)

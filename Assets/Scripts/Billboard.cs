@@ -13,7 +13,22 @@ public class Billboard : MonoBehaviour
         ResolveCamera();
     }
 
+    private void OnEnable()
+    {
+        ApplyRotation();
+    }
+
     private void LateUpdate()
+    {
+        ApplyRotation();
+    }
+
+    private void OnValidate()
+    {
+        ResolveCamera();
+    }
+
+    private void ApplyRotation()
     {
         ResolveCamera();
 
@@ -22,11 +37,15 @@ public class Billboard : MonoBehaviour
             return;
         }
 
-        Vector3 cameraDirection = fullBillboard
-            ? targetCamera.transform.position - transform.position
-            : targetCamera.transform.forward;
+        if (fullBillboard)
+        {
+            transform.rotation = targetCamera.transform.rotation;
+            return;
+        }
 
-        if (freezeY && !fullBillboard)
+        Vector3 cameraDirection = targetCamera.transform.forward;
+
+        if (freezeY)
         {
             cameraDirection.y = 0f;
         }
@@ -37,11 +56,6 @@ public class Billboard : MonoBehaviour
         }
 
         transform.rotation = Quaternion.LookRotation(cameraDirection.normalized);
-    }
-
-    private void OnValidate()
-    {
-        ResolveCamera();
     }
 
     private void ResolveCamera()

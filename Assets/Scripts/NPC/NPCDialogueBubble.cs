@@ -37,8 +37,9 @@ public class NPCDialogueBubble : MonoBehaviour
             return;
         }
 
-        bubbleText.text = message;
         SetVisible(true);
+        bubbleText.text = message;
+        bubbleText.ForceMeshUpdate();
         hideTimer = hideDelay;
     }
 
@@ -49,8 +50,9 @@ public class NPCDialogueBubble : MonoBehaviour
             return;
         }
 
-        bubbleText.text = message;
         SetVisible(true);
+        bubbleText.text = message;
+        bubbleText.ForceMeshUpdate();
         hideTimer = duration;
     }
 
