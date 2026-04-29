@@ -1097,7 +1097,7 @@ MonoBehaviour:
     type: 3}
   m_PrefabInstance: {fileID: 2587487809545045965}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1646754339}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 89aabc0e7a38d3b4a9a561418f0b3b4f, type: 3}
@@ -1750,27 +1750,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1215195106}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1646754339 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1668305320217490482, guid: d481733bff90832419fd7d5445713bb5,
-    type: 3}
-  m_PrefabInstance: {fileID: 2587487809545045965}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1646754341
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1646754339}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f702c157436754041b6f5e3f358e2703, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  npcPawnPrefab: {fileID: 1586210013}
-  spawnParent: {fileID: 1248514673}
-  npcGenerator: {fileID: 1129110258}
 --- !u!1 &1726842366
 GameObject:
   m_ObjectHideFlags: 0
@@ -2253,8 +2232,18 @@ PrefabInstance:
     - target: {fileID: 1668305320217490482, guid: d481733bff90832419fd7d5445713bb5,
         type: 3}
       propertyPath: m_Name
-      value: NPC Generator
+      value: NPC Manager
       objectReference: {fileID: 0}
+    - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: spawnParent
+      value: 
+      objectReference: {fileID: 1248514673}
+    - target: {fileID: 3708043392199942633, guid: d481733bff90832419fd7d5445713bb5,
+        type: 3}
+      propertyPath: npcPawnPrefab
+      value: 
+      objectReference: {fileID: 1586210013}
     - target: {fileID: 7181312806285078053, guid: d481733bff90832419fd7d5445713bb5,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -2308,11 +2297,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1668305320217490482, guid: d481733bff90832419fd7d5445713bb5,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1646754341}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d481733bff90832419fd7d5445713bb5, type: 3}
 --- !u!1001 &3920506337621175543
 PrefabInstance:

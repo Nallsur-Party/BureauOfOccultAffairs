@@ -50,6 +50,7 @@ public class PlayerController : MonoBehaviour
     private NpcOrderVisitor currentInteractableNpc;
     private NpcOrderVisitor activeDialogueNpc;
     private NPCSpawner npcSpawner;
+    private NPCQueueManager npcQueueManager;
 
     private void Awake()
     {
@@ -58,6 +59,7 @@ public class PlayerController : MonoBehaviour
         bodyCollider = GetComponent<Collider>();
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         npcSpawner = FindObjectOfType<NPCSpawner>();
+        npcQueueManager = FindObjectOfType<NPCQueueManager>();
         rb.constraints = RigidbodyConstraints.FreezeRotation;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
@@ -246,19 +248,22 @@ public class PlayerController : MonoBehaviour
 
     private void SendNpcToExit(string exitName)
     {
-        NpcOrderVisitor[] allNpcs = FindObjectsOfType<NpcOrderVisitor>();
-
-        foreach (NpcOrderVisitor npc in allNpcs)
+        if (npcQueueManager == null)
         {
-            if (npc.IsWaitingAtCounter)
-            {
-                npc.LeaveThroughExitByName(exitName);
-                Debug.Log($"Sending NPC {npc.gameObject.name} to exit {exitName}");
-                return;
-            }
+            Debug.LogWarning("NPCQueueManager not found!");
+            return;
         }
 
-        Debug.Log($"No NPC waiting at counter to send to exit {exitName}");
+        NpcOrderVisitor npcToSend = npcQueueManager.GetNextWaitingNPC();
+        if (npcToSend != null)
+        {
+            npcToSend.LeaveThroughExitByName(exitName);
+            Debug.Log($"Sending NPC {npcToSend.gameObject.name} to exit {exitName}");
+        }
+        else
+        {
+            Debug.Log($"No NPC waiting at counter to send to exit {exitName}");
+        }
     }
 
     private void StartNpcConversation(NpcOrderVisitor npc)

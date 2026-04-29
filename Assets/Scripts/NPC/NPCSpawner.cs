@@ -6,6 +6,7 @@ public class NPCSpawner : MonoBehaviour
     private GameObject npcPawnPrefab;
     [SerializeField] private Transform spawnParent;
     [SerializeField] private NPCGenerator npcGenerator;
+    [SerializeField] private NPCQueueManager npcQueueManager;
 
     private void Awake()
     {
@@ -14,9 +15,19 @@ public class NPCSpawner : MonoBehaviour
             npcGenerator = FindObjectOfType<NPCGenerator>();
         }
 
+        if (npcQueueManager == null)
+        {
+            npcQueueManager = FindObjectOfType<NPCQueueManager>();
+        }
+
         if (npcGenerator == null)
         {
             Debug.LogError("NPCGenerator not found in scene!", this);
+        }
+
+        if (npcQueueManager == null)
+        {
+            Debug.LogError("NPCQueueManager not found in scene!", this);
         }
     }
 
@@ -50,6 +61,12 @@ public class NPCSpawner : MonoBehaviour
         NPC generatedNpc = GenerateUniqueNPC();
         
         npcOrderVisitor.SetNpcData(generatedNpc);
+
+        // Регистрируем NPC в очереди
+        if (npcQueueManager != null)
+        {
+            npcQueueManager.EnqueueNPC(npcOrderVisitor);
+        }
 
         Debug.Log($"Spawned NPC: {generatedNpc?.Name}", spawnedNpcObject);
     }

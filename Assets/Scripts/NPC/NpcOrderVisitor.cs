@@ -54,6 +54,7 @@ public class NpcOrderVisitor : MonoBehaviour
     private Transform currentTarget;
     private Vector3 lastFrameVelocity = Vector3.zero;
     private PlayerController playerController;
+    private NPCQueueManager npcQueueManager;
 
     public bool IsWaitingAtCounter => currentState == VisitorState.WaitingAtCounter;
     public NPC NpcData => npcData;
@@ -83,6 +84,11 @@ public class NpcOrderVisitor : MonoBehaviour
         if (dialogueBubble == null)
         {
             dialogueBubble = GetComponentInChildren<NPCDialogueBubble>();
+        }
+
+        if (npcQueueManager == null)
+        {
+            npcQueueManager = FindObjectOfType<NPCQueueManager>();
         }
 
         if (generateNpcDataOnAwake)
@@ -330,6 +336,11 @@ public class NpcOrderVisitor : MonoBehaviour
                 currentTarget = null;
                 onLeftScene.Invoke();
                 HideDialogue();
+                // Удаляем NPC из очереди перед деактивацией
+                if (npcQueueManager != null)
+                {
+                    npcQueueManager.DequeueNPC(this);
+                }
                 gameObject.SetActive(false);
                 break;
         }

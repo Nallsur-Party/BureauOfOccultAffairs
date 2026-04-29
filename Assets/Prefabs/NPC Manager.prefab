@@ -11,8 +11,9 @@ GameObject:
   - component: {fileID: 7181312806285078053}
   - component: {fileID: 6380206237659848771}
   - component: {fileID: 3708043392199942633}
+  - component: {fileID: 320507868644829544}
   m_Layer: 0
-  m_Name: NPC Generator
+  m_Name: NPC Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -92,3 +93,16 @@ MonoBehaviour:
   npcPawnPrefab: {fileID: 0}
   spawnParent: {fileID: 0}
   npcGenerator: {fileID: 6380206237659848771}
+  npcQueueManager: {fileID: 320507868644829544}
+--- !u!114 &320507868644829544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1668305320217490482}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 205017572eddbb147b36d4324738af51, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
