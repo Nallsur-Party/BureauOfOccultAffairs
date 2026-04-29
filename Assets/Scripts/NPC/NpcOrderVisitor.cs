@@ -4,12 +4,15 @@ using UnityEngine.Events;
 [RequireComponent(typeof(Rigidbody))]
 public class NpcOrderVisitor : MonoBehaviour
 {
+    private static NpcOrderVisitor nStayOccupant;
+
     private enum VisitorState
     {
         Idle,
         GoingToCounter,
         WaitingInQueue,
         WaitingAtCounter,
+        WaitingForProblemResolution,
         PushingAway,
         Leaving
     }
@@ -27,6 +30,8 @@ public class NpcOrderVisitor : MonoBehaviour
     [SerializeField] private Transform startPoint;
     [SerializeField] private Transform counterPoint;
     [SerializeField] private Transform[] exitPoints;
+    [SerializeField] private Transform[] sequentialExitRoutePoints;
+    [SerializeField] private Transform[] holdUntilCuredExitRoutePoints;
     [SerializeField] private bool snapToStartPointOnAwake = true;
     [SerializeField] private bool beginRouteOnAwake = true;
 
@@ -73,10 +78,15 @@ public class NpcOrderVisitor : MonoBehaviour
     private Transform interruptedTarget;
     private bool interruptedUseCustomTarget;
     private Vector3 interruptedCustomTargetPosition;
+    private bool isSequentialExitActive;
+    private int sequentialExitIndex = -1;
+    private bool isHoldUntilCuredExitActive;
+    private int holdUntilCuredExitIndex = -1;
 
     public bool IsWaitingAtCounter => currentState == VisitorState.WaitingAtCounter;
     public bool IsInQueue => currentState == VisitorState.WaitingInQueue;
     public NPC NpcData => npcData;
+    public static bool IsNStayOccupied => nStayOccupant != null && nStayOccupant.isActiveAndEnabled;
 
     private void Awake()
     {
@@ -154,6 +164,11 @@ public class NpcOrderVisitor : MonoBehaviour
         {
             SendToCounter();
         }
+    }
+
+    private void OnDisable()
+    {
+        ReleaseNStayOccupancy();
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -415,6 +430,11 @@ public class NpcOrderVisitor : MonoBehaviour
 
     private void Update()
     {
+        if (currentState == VisitorState.WaitingForProblemResolution && npcData != null && npcData.IsCured)
+        {
+            ContinueHoldUntilCuredExitRoute();
+        }
+
         if (currentTarget == null && !useCustomTarget)
         {
             lastFrameVelocity = Vector3.zero;
@@ -481,6 +501,7 @@ public class NpcOrderVisitor : MonoBehaviour
         {
             currentState = VisitorState.Idle;
             currentTarget = null;
+            isSequentialExitActive = false;
             return;
         }
 
@@ -495,6 +516,18 @@ public class NpcOrderVisitor : MonoBehaviour
             return;
         }
 
+        if (exitPoints[exitIndex].name.Contains("Z"))
+        {
+            StartSequentialExitRoute();
+            return;
+        }
+
+        if (exitPoints[exitIndex].name.Contains("N"))
+        {
+            StartHoldUntilCuredExitRoute();
+            return;
+        }
+
         if (npcQueueManager == null)
         {
             npcQueueManager = FindObjectOfType<NPCQueueManager>();
@@ -505,6 +538,10 @@ public class NpcOrderVisitor : MonoBehaviour
             npcQueueManager.DequeueNPC(this);
         }
 
+        isSequentialExitActive = false;
+        sequentialExitIndex = -1;
+        isHoldUntilCuredExitActive = false;
+        holdUntilCuredExitIndex = -1;
         SetTargetTransform(exitPoints[exitIndex]);
         currentState = VisitorState.Leaving;
     }
@@ -516,6 +553,18 @@ public class NpcOrderVisitor : MonoBehaviour
             return;
         }
 
+        if (string.Equals(exitName, "Z", System.StringComparison.OrdinalIgnoreCase))
+        {
+            StartSequentialExitRoute();
+            return;
+        }
+
+        if (string.Equals(exitName, "N", System.StringComparison.OrdinalIgnoreCase))
+        {
+            StartHoldUntilCuredExitRoute();
+            return;
+        }
+
         for (int i = 0; i < exitPoints.Length; i++)
         {
             if (exitPoints[i] != null && exitPoints[i].name.Contains(exitName))
@@ -523,6 +572,157 @@ public class NpcOrderVisitor : MonoBehaviour
                 LeaveThroughExit(i);
                 return;
             }
+        }
+    }
+
+    public void SetSequentialExitRoutePoints(Transform[] routePoints)
+    {
+        sequentialExitRoutePoints = routePoints;
+        sequentialExitIndex = -1;
+        isSequentialExitActive = false;
+    }
+
+    public void SetHoldUntilCuredExitRoutePoints(Transform[] routePoints)
+    {
+        holdUntilCuredExitRoutePoints = routePoints;
+        holdUntilCuredExitIndex = -1;
+        isHoldUntilCuredExitActive = false;
+    }
+
+    private void StartSequentialExitRoute()
+    {
+        if (sequentialExitRoutePoints == null || sequentialExitRoutePoints.Length == 0)
+        {
+            return;
+        }
+
+        if (npcQueueManager == null)
+        {
+            npcQueueManager = FindObjectOfType<NPCQueueManager>();
+        }
+
+        if (npcQueueManager != null)
+        {
+            npcQueueManager.DequeueNPC(this);
+        }
+
+        isSequentialExitActive = true;
+        sequentialExitIndex = 0;
+        isHoldUntilCuredExitActive = false;
+        holdUntilCuredExitIndex = -1;
+        SetTargetTransform(sequentialExitRoutePoints[0]);
+        currentState = VisitorState.Leaving;
+    }
+
+    private void StartHoldUntilCuredExitRoute()
+    {
+        if (holdUntilCuredExitRoutePoints == null || holdUntilCuredExitRoutePoints.Length == 0)
+        {
+            return;
+        }
+
+        if (IsNStayOccupiedByAnother(this))
+        {
+            return;
+        }
+
+        if (npcQueueManager == null)
+        {
+            npcQueueManager = FindObjectOfType<NPCQueueManager>();
+        }
+
+        if (npcQueueManager != null)
+        {
+            npcQueueManager.DequeueNPC(this);
+        }
+
+        isSequentialExitActive = false;
+        sequentialExitIndex = -1;
+        isHoldUntilCuredExitActive = true;
+        holdUntilCuredExitIndex = 0;
+        SetTargetTransform(holdUntilCuredExitRoutePoints[0]);
+        currentState = VisitorState.Leaving;
+    }
+
+    public bool TryContinueResolvedExitRoute()
+    {
+        if (!isHoldUntilCuredExitActive || currentState != VisitorState.WaitingForProblemResolution)
+        {
+            return false;
+        }
+
+        ContinueHoldUntilCuredExitRoute();
+        return true;
+    }
+
+    private void ContinueHoldUntilCuredExitRoute()
+    {
+        if (!isHoldUntilCuredExitActive || holdUntilCuredExitRoutePoints == null)
+        {
+            return;
+        }
+
+        ReleaseNStayOccupancy();
+
+        if (holdUntilCuredExitIndex + 1 >= holdUntilCuredExitRoutePoints.Length)
+        {
+            FinishLeavingScene();
+            return;
+        }
+
+        holdUntilCuredExitIndex++;
+        Transform nextWaypoint = holdUntilCuredExitRoutePoints[holdUntilCuredExitIndex];
+        if (nextWaypoint == null)
+        {
+            FinishLeavingScene();
+            return;
+        }
+
+        SetTargetTransform(nextWaypoint);
+        currentState = VisitorState.Leaving;
+    }
+
+    private bool IsWaitingWaypointInHoldRoute()
+    {
+        if (!isHoldUntilCuredExitActive
+            || holdUntilCuredExitRoutePoints == null
+            || holdUntilCuredExitIndex < 0
+            || holdUntilCuredExitIndex >= holdUntilCuredExitRoutePoints.Length)
+        {
+            return false;
+        }
+
+        Transform currentWaypoint = holdUntilCuredExitRoutePoints[holdUntilCuredExitIndex];
+        if (currentWaypoint == null)
+        {
+            return false;
+        }
+
+        string waypointName = currentWaypoint.name;
+        return !string.IsNullOrWhiteSpace(waypointName)
+            && (waypointName.Contains("NStay") || waypointName.Contains("Stay"));
+    }
+
+    private static bool IsNStayOccupiedByAnother(NpcOrderVisitor requester)
+    {
+        if (nStayOccupant != null && !nStayOccupant.isActiveAndEnabled)
+        {
+            nStayOccupant = null;
+        }
+
+        return nStayOccupant != null && nStayOccupant != requester;
+    }
+
+    private void ClaimNStayOccupancy()
+    {
+        nStayOccupant = this;
+    }
+
+    private void ReleaseNStayOccupancy()
+    {
+        if (nStayOccupant == this)
+        {
+            nStayOccupant = null;
         }
     }
 
@@ -538,6 +738,10 @@ public class NpcOrderVisitor : MonoBehaviour
 
             case VisitorState.WaitingInQueue:
                 currentState = VisitorState.WaitingInQueue;
+                ClearTarget();
+                break;
+
+            case VisitorState.WaitingForProblemResolution:
                 ClearTarget();
                 break;
 
@@ -571,17 +775,58 @@ public class NpcOrderVisitor : MonoBehaviour
                 break;
 
             case VisitorState.Leaving:
-                currentState = VisitorState.Idle;
-                ClearTarget();
-                onLeftScene.Invoke();
-                HideDialogue();
-                if (npcQueueManager != null)
+                if (isHoldUntilCuredExitActive)
                 {
-                    npcQueueManager.DequeueNPC(this);
+                    if (IsWaitingWaypointInHoldRoute() && (npcData == null || !npcData.IsCured))
+                    {
+                        ClaimNStayOccupancy();
+                        currentState = VisitorState.WaitingForProblemResolution;
+                        ClearTarget();
+                        break;
+                    }
+
+                    if (holdUntilCuredExitRoutePoints != null && holdUntilCuredExitIndex + 1 < holdUntilCuredExitRoutePoints.Length)
+                    {
+                        holdUntilCuredExitIndex++;
+                        Transform nextHoldWaypoint = holdUntilCuredExitRoutePoints[holdUntilCuredExitIndex];
+                        if (nextHoldWaypoint != null)
+                        {
+                            SetTargetTransform(nextHoldWaypoint);
+                            currentState = VisitorState.Leaving;
+                            break;
+                        }
+                    }
                 }
-                gameObject.SetActive(false);
+
+                if (isSequentialExitActive && sequentialExitRoutePoints != null && sequentialExitIndex + 1 < sequentialExitRoutePoints.Length)
+                {
+                    sequentialExitIndex++;
+                    Transform nextWaypoint = sequentialExitRoutePoints[sequentialExitIndex];
+                    if (nextWaypoint != null)
+                    {
+                        SetTargetTransform(nextWaypoint);
+                    }
+                    currentState = VisitorState.Leaving;
+                    break;
+                }
+
+                FinishLeavingScene();
                 break;
         }
+    }
+
+    private void FinishLeavingScene()
+    {
+        ReleaseNStayOccupancy();
+        isSequentialExitActive = false;
+        sequentialExitIndex = -1;
+        isHoldUntilCuredExitActive = false;
+        holdUntilCuredExitIndex = -1;
+        currentState = VisitorState.Idle;
+        ClearTarget();
+        onLeftScene.Invoke();
+        HideDialogue();
+        gameObject.SetActive(false);
     }
 
     private Vector3 GetTargetPosition(Transform targetPoint)

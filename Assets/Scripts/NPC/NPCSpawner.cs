@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class NPCSpawner : MonoBehaviour
@@ -12,6 +13,8 @@ public class NPCSpawner : MonoBehaviour
     [SerializeField] private Transform startPoint;
     [SerializeField] private Transform counterPoint;
     [SerializeField] private Transform[] exitPoints;
+    [SerializeField] private Transform[] zExitRoutePoints;
+    [SerializeField] private Transform[] nExitRoutePoints;
     [SerializeField] private float autoSpawnInterval = 2f;
     [SerializeField] private bool autoSpawnEnabledByDefault = true;
 
@@ -158,6 +161,8 @@ public class NPCSpawner : MonoBehaviour
 
         npcOrderVisitor.SetNpcData(generatedNpc);
         npcOrderVisitor.ConfigureRoute(startPoint, counterPoint, exitPoints, true);
+        npcOrderVisitor.SetSequentialExitRoutePoints(GetSequentialExitRoutePoints());
+        npcOrderVisitor.SetHoldUntilCuredExitRoutePoints(GetHoldUntilCuredExitRoutePoints());
 
         npcQueueManager.EnqueueNPC(npcOrderVisitor);
 
@@ -214,9 +219,100 @@ public class NPCSpawner : MonoBehaviour
         {
             exitPoints = new Transform[]
             {
-                routeRoot.Find("ExitPoint_Z"),
+                FindExitPoint("ExitPoint_Z0", "ExitPoint_Z"),
+                FindExitPoint("ExitPoint_Z1"),
+                FindExitPoint("ExitPoint_Z2"),
                 routeRoot.Find("ExitPoint_N")
             };
         }
+
+        if (zExitRoutePoints == null || zExitRoutePoints.Length == 0)
+        {
+            zExitRoutePoints = new Transform[]
+            {
+                FindExitPoint("ExitPoint_Z0", "ExitPoint_Z"),
+                FindExitPoint("ExitPoint_Z1"),
+                FindExitPoint("ExitPoint_Z2")
+            };
+        }
+
+        if (nExitRoutePoints == null || nExitRoutePoints.Length == 0)
+        {
+            nExitRoutePoints = new Transform[]
+            {
+                FindExitPoint("ExitPoint_NStay"),
+                FindExitPoint("ExitPoint_N")
+            };
+        }
+    }
+
+    private Transform FindExitPoint(params string[] names)
+    {
+        if (routeRoot == null || names == null)
+        {
+            return null;
+        }
+
+        foreach (string name in names)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            Transform exitPoint = routeRoot.Find(name);
+            if (exitPoint != null)
+            {
+                return exitPoint;
+            }
+        }
+
+        return null;
+    }
+
+    private Transform[] GetSequentialExitRoutePoints()
+    {
+        if (zExitRoutePoints != null && zExitRoutePoints.Length > 0)
+        {
+            return BuildRoute(zExitRoutePoints);
+        }
+
+        return BuildRoute(
+            FindExitPoint("ExitPoint_Z0", "ExitPoint_Z"),
+            FindExitPoint("ExitPoint_Z1"),
+            FindExitPoint("ExitPoint_Z2")
+        );
+    }
+
+    private Transform[] GetHoldUntilCuredExitRoutePoints()
+    {
+        if (nExitRoutePoints != null && nExitRoutePoints.Length > 0)
+        {
+            return BuildRoute(nExitRoutePoints);
+        }
+
+        return BuildRoute(
+            FindExitPoint("ExitPoint_NStay"),
+            FindExitPoint("ExitPoint_N")
+        );
+    }
+
+    private static Transform[] BuildRoute(params Transform[] points)
+    {
+        List<Transform> route = new List<Transform>();
+        if (points == null)
+        {
+            return route.ToArray();
+        }
+
+        for (int i = 0; i < points.Length; i++)
+        {
+            if (points[i] != null)
+            {
+                route.Add(points[i]);
+            }
+        }
+
+        return route.ToArray();
     }
 }

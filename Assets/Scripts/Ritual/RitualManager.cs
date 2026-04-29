@@ -175,7 +175,10 @@ public class RitualManager : MonoBehaviour
             AwardRitualPoints();
             ClearProgress(npc);
             LogAttempt(npc, RitualAttemptResult.Completed, item, action, FormatStep(expectedStep));
-            npc.LeaveRandomExit();
+            if (!npc.TryContinueResolvedExitRoute())
+            {
+                npc.LeaveRandomExit();
+            }
             return RitualAttemptResult.Completed;
         }
 

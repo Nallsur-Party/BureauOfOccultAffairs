@@ -40,7 +40,6 @@ public class PlayerController : MonoBehaviour
 
     [Header("Debug Ritual")]
     [SerializeField] private RitualManager ritualManager;
-    [SerializeField] private RitualGameTimer gameTimer;
 
     private Rigidbody rb;
     private PlayerProfile playerProfile;
@@ -68,7 +67,6 @@ public class PlayerController : MonoBehaviour
         npcSpawner = FindObjectOfType<NPCSpawner>();
         npcQueueManager = FindObjectOfType<NPCQueueManager>();
         ritualManager = FindObjectOfType<RitualManager>();
-        gameTimer = FindObjectOfType<RitualGameTimer>();
 
         if (ritualManager == null)
         {
@@ -101,8 +99,18 @@ public class PlayerController : MonoBehaviour
         UpdateGroundedState();
         UpdateFacing();
         UpdateAnimator();
-        UpdateDialogueFocus();
         SetInteractionPromptVisible(currentInteractableNpc != null);
+
+        if (activeDialogueNpc != null && currentInteractableNpc != activeDialogueNpc)
+        {
+            if (ritualManager != null)
+            {
+                ritualManager.ClearProgress(activeDialogueNpc);
+            }
+
+            activeDialogueNpc.HideDialogue();
+            activeDialogueNpc = null;
+        }
     }
 
     private void FixedUpdate()
@@ -256,11 +264,7 @@ public class PlayerController : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.P))
         {
-            ToggleNpcAutoSpawn();
-        }
-        else if (Input.GetKeyDown(KeyCode.O))
-        {
-            ForceEndGameTimer();
+            SpawnNPC();
         }
     }
 
@@ -273,30 +277,6 @@ public class PlayerController : MonoBehaviour
         else
         {
             Debug.LogWarning("NPCSpawner not found in scene!");
-        }
-    }
-
-    private void ToggleNpcAutoSpawn()
-    {
-        if (npcSpawner != null)
-        {
-            npcSpawner.ToggleAutoSpawn();
-        }
-        else
-        {
-            Debug.LogWarning("NPCSpawner not found in scene!");
-        }
-    }
-
-    private void ForceEndGameTimer()
-    {
-        if (gameTimer != null)
-        {
-            gameTimer.ForceEndGame();
-        }
-        else
-        {
-            Debug.LogWarning("RitualGameTimer not found in scene!");
         }
     }
 
@@ -332,25 +312,18 @@ public class PlayerController : MonoBehaviour
             ritualManager.ClearProgress(activeDialogueNpc);
         }
 
-        if (activeDialogueNpc != null && activeDialogueNpc != npc)
-        {
-            activeDialogueNpc.SetDialogueFocus(false);
-        }
-
         activeDialogueNpc = npc;
         npc.ShowDialogue(npc.Interact());
-        npc.SetDialogueFocus(true);
     }
 
     private void AskNpcQuestion(NPCQuestionType questionType)
     {
-        if (!IsActiveDialogueNpcInRange())
+        if (activeDialogueNpc == null)
         {
             return;
         }
 
         activeDialogueNpc.ShowDialogue(activeDialogueNpc.GetQuestionResponse(questionType, playerProfile));
-        activeDialogueNpc.SetDialogueFocus(true);
     }
 
     private void HandleRitualItemSelection()
@@ -410,7 +383,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (!IsActiveDialogueNpcInRange())
+        if (activeDialogueNpc == null)
         {
             Debug.Log("Ritual Debug | No active NPC dialogue target.");
             return;
@@ -423,12 +396,10 @@ public class PlayerController : MonoBehaviour
                 activeDialogueNpc.ShowDialogue("Начинаем ритуал...");
             }
 
-            activeDialogueNpc.SetDialogueFocus(true);
             return;
         }
 
         RitualAttemptResult result = ritualManager.TryPerformStep(activeDialogueNpc, selectedRitualItem, selectedRitualAction);
-        activeDialogueNpc.SetDialogueFocus(true);
         if (result == RitualAttemptResult.NotStarted)
         {
             Debug.Log("Ritual Debug | Ritual step ignored because the ritual has not been started.");
@@ -467,33 +438,6 @@ public class PlayerController : MonoBehaviour
         int currentIndex = Array.IndexOf(ritualItems, selectedRitualItem);
         int nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % ritualItems.Length;
         SelectRitualItem(ritualItems[nextIndex]);
-    }
-
-    private void UpdateDialogueFocus()
-    {
-        if (activeDialogueNpc == null)
-        {
-            return;
-        }
-
-        bool isInRange = currentInteractableNpc == activeDialogueNpc;
-        activeDialogueNpc.SetDialogueFocus(isInRange);
-        activeDialogueNpc.SyncHealthBarVisibility(activeDialogueNpc.IsDialogueVisible);
-
-        if (!isInRange && !activeDialogueNpc.IsDialogueVisible)
-        {
-            if (ritualManager != null)
-            {
-                ritualManager.ClearProgress(activeDialogueNpc);
-            }
-
-            activeDialogueNpc = null;
-        }
-    }
-
-    private bool IsActiveDialogueNpcInRange()
-    {
-        return activeDialogueNpc != null && currentInteractableNpc == activeDialogueNpc;
     }
 
     private void UpdateAnimator()
