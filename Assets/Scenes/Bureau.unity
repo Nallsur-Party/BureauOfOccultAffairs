@@ -1465,6 +1465,11 @@ PrefabInstance:
       objectReference: {fileID: 1129110258}
     - target: {fileID: 3728247049770033207, guid: 12ce90bdcae983f418ccea3e8573a6a1,
         type: 3}
+      propertyPath: dialogueBubble
+      value: 
+      objectReference: {fileID: 1586210022}
+    - target: {fileID: 3728247049770033207, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+        type: 3}
       propertyPath: exitPoints.Array.data[0]
       value: 
       objectReference: {fileID: 944556526}
@@ -1508,6 +1513,18 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1586210012}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1586210022 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6643285303499785997, guid: 12ce90bdcae983f418ccea3e8573a6a1,
+    type: 3}
+  m_PrefabInstance: {fileID: 1586210012}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1586210014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e49d5db60fa9260409cd202d02a955dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1591665206
 GameObject:
   m_ObjectHideFlags: 0
