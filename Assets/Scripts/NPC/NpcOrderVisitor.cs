@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
+[RequireComponent(typeof(Rigidbody))]
 public class NpcOrderVisitor : MonoBehaviour
 {
     private enum VisitorState
@@ -33,6 +34,7 @@ public class NpcOrderVisitor : MonoBehaviour
     [SerializeField] private float moveSpeed = 2.5f;
     [SerializeField] private float stoppingDistance = 0.05f;
     [SerializeField] private bool keepCurrentY = true;
+    [SerializeField] private float collisionSkin = 0.02f;
 
     [Header("Visual")]
     [SerializeField] private SpriteRenderer spriteRenderer;
@@ -60,11 +62,16 @@ public class NpcOrderVisitor : MonoBehaviour
     private bool useCustomTarget;
     private Vector3 customTargetPosition;
     private Vector3 lastFrameVelocity = Vector3.zero;
+    private Rigidbody rb;
+    private CapsuleCollider bodyCollider;
     private PlayerController playerController;
     private NPCQueueManager npcQueueManager;
     private VisitorState previousState;
     private bool isPushed = false;
     private Vector3 queuePosition;
+    private Transform interruptedTarget;
+    private bool interruptedUseCustomTarget;
+    private Vector3 interruptedCustomTargetPosition;
 
     public bool IsWaitingAtCounter => currentState == VisitorState.WaitingAtCounter;
     public bool IsInQueue => currentState == VisitorState.WaitingInQueue;
@@ -72,6 +79,9 @@ public class NpcOrderVisitor : MonoBehaviour
 
     private void Awake()
     {
+        rb = GetComponent<Rigidbody>();
+        bodyCollider = GetComponent<CapsuleCollider>();
+
         if (spriteRenderer == null)
         {
             spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -107,9 +117,31 @@ public class NpcOrderVisitor : MonoBehaviour
             GenerateNpcData();
         }
 
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.constraints = RigidbodyConstraints.FreezeRotation;
+            if (keepCurrentY)
+            {
+                rb.constraints |= RigidbodyConstraints.FreezePositionY;
+            }
+
+            rb.useGravity = !keepCurrentY;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        }
+
         if (snapToStartPointOnAwake && startPoint != null)
         {
-            transform.position = GetTargetPosition(startPoint);
+            Vector3 startPosition = GetTargetPosition(startPoint);
+            if (rb != null)
+            {
+                rb.position = startPosition;
+            }
+            else
+            {
+                transform.position = startPosition;
+            }
         }
 
         if (beginRouteOnAwake)
@@ -120,7 +152,9 @@ public class NpcOrderVisitor : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Player") && currentState != VisitorState.PushingAway)
+        if (collision.gameObject.CompareTag("Player")
+            && currentState != VisitorState.PushingAway
+            && currentState != VisitorState.WaitingAtCounter)
         {
             PushAway();
         }
@@ -130,6 +164,9 @@ public class NpcOrderVisitor : MonoBehaviour
     {
         // Сохранить предыдущее состояние
         previousState = currentState;
+        interruptedTarget = currentTarget;
+        interruptedUseCustomTarget = useCustomTarget;
+        interruptedCustomTargetPosition = customTargetPosition;
 
         // Выбрать случайное направление
         Vector3 direction = Random.insideUnitSphere;
@@ -318,16 +355,36 @@ public class NpcOrderVisitor : MonoBehaviour
             return;
         }
 
-        Vector3 targetPosition = GetTargetPosition();
-        Vector3 nextPosition = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-        Vector3 delta = nextPosition - transform.position;
-
-        transform.position = nextPosition;
-        lastFrameVelocity = delta / Time.deltaTime;
-        UpdateFacing(delta);
         UpdateAnimator();
+    }
 
-        if (Vector3.Distance(transform.position, targetPosition) <= stoppingDistance)
+    private void FixedUpdate()
+    {
+        if (currentTarget == null && !useCustomTarget)
+        {
+            return;
+        }
+
+        Vector3 targetPosition = GetTargetPosition();
+        Vector3 currentPosition = rb != null ? rb.position : transform.position;
+        Vector3 nextPosition = Vector3.MoveTowards(currentPosition, targetPosition, moveSpeed * Time.fixedDeltaTime);
+        Vector3 delta = nextPosition - currentPosition;
+        delta = ResolveMovementCollisions(delta);
+        nextPosition = currentPosition + delta;
+
+        if (rb != null)
+        {
+            rb.MovePosition(nextPosition);
+        }
+        else
+        {
+            transform.position = nextPosition;
+        }
+
+        lastFrameVelocity = Time.fixedDeltaTime > 0f ? delta / Time.fixedDeltaTime : Vector3.zero;
+        UpdateFacing(delta);
+
+        if (Vector3.Distance(nextPosition, targetPosition) <= stoppingDistance)
         {
             ArriveAtTarget();
         }
@@ -436,8 +493,12 @@ public class NpcOrderVisitor : MonoBehaviour
                     case VisitorState.GoingToCounter:
                         SendToCounter();
                         break;
+                    case VisitorState.Leaving:
+                        RestoreInterruptedTarget();
+                        currentState = VisitorState.Leaving;
+                        break;
                     default:
-                        ClearTarget();
+                        RestoreInterruptedTarget();
                         break;
                 }
                 break;
@@ -471,6 +532,106 @@ public class NpcOrderVisitor : MonoBehaviour
         }
 
         return targetPosition;
+    }
+
+    private Vector3 ResolveMovementCollisions(Vector3 delta)
+    {
+        if (bodyCollider == null || delta.sqrMagnitude <= 0.0001f)
+        {
+            return delta;
+        }
+
+        if (!TryCapsuleCast(delta, out RaycastHit hit))
+        {
+            return delta;
+        }
+
+        float moveDistance = Mathf.Max(0f, hit.distance - collisionSkin);
+        Vector3 moveToWall = delta.normalized * Mathf.Min(delta.magnitude, moveDistance);
+        Vector3 remainingDelta = delta - moveToWall;
+        Vector3 slideDelta = Vector3.ProjectOnPlane(remainingDelta, hit.normal);
+
+        if (keepCurrentY)
+        {
+            slideDelta.y = 0f;
+        }
+
+        if (slideDelta.sqrMagnitude <= 0.0001f)
+        {
+            return moveToWall;
+        }
+
+        if (TryCapsuleCast(slideDelta, out RaycastHit slideHit))
+        {
+            float slideDistance = Mathf.Max(0f, slideHit.distance - collisionSkin);
+            slideDelta = slideDelta.normalized * Mathf.Min(slideDelta.magnitude, slideDistance);
+        }
+
+        return moveToWall + slideDelta;
+    }
+
+    private void GetCapsuleWorldPoints(CapsuleCollider capsule, out Vector3 point1, out Vector3 point2, out float radius)
+    {
+        Transform capsuleTransform = capsule.transform;
+        Vector3 center = capsuleTransform.TransformPoint(capsule.center);
+        Vector3 lossyScale = capsuleTransform.lossyScale;
+
+        float scaleX = Mathf.Abs(lossyScale.x);
+        float scaleY = Mathf.Abs(lossyScale.y);
+        float scaleZ = Mathf.Abs(lossyScale.z);
+
+        switch (capsule.direction)
+        {
+            case 0:
+            {
+                radius = capsule.radius * Mathf.Max(scaleY, scaleZ);
+                float halfHeight = Mathf.Max(capsule.height * scaleX * 0.5f, radius);
+                float offset = halfHeight - radius;
+                Vector3 axis = capsuleTransform.right * offset;
+                point1 = center + axis;
+                point2 = center - axis;
+                break;
+            }
+            case 2:
+            {
+                radius = capsule.radius * Mathf.Max(scaleX, scaleY);
+                float halfHeight = Mathf.Max(capsule.height * scaleZ * 0.5f, radius);
+                float offset = halfHeight - radius;
+                Vector3 axis = capsuleTransform.forward * offset;
+                point1 = center + axis;
+                point2 = center - axis;
+                break;
+            }
+            default:
+            {
+                radius = capsule.radius * Mathf.Max(scaleX, scaleZ);
+                float halfHeight = Mathf.Max(capsule.height * scaleY * 0.5f, radius);
+                float offset = halfHeight - radius;
+                Vector3 axis = capsuleTransform.up * offset;
+                point1 = center + axis;
+                point2 = center - axis;
+                break;
+            }
+        }
+    }
+
+    private bool TryCapsuleCast(Vector3 delta, out RaycastHit hit)
+    {
+        hit = default;
+
+        if (bodyCollider == null || delta.sqrMagnitude <= 0.0001f)
+        {
+            return false;
+        }
+
+        Vector3 point1;
+        Vector3 point2;
+        float radius;
+        GetCapsuleWorldPoints(bodyCollider, out point1, out point2, out radius);
+
+        Vector3 direction = delta.normalized;
+        float distance = delta.magnitude + collisionSkin;
+        return Physics.CapsuleCast(point1, point2, radius, direction, out hit, distance, ~0, QueryTriggerInteraction.Ignore);
     }
 
     private Vector3 GetTargetPosition()
@@ -511,6 +672,13 @@ public class NpcOrderVisitor : MonoBehaviour
     {
         currentTarget = null;
         useCustomTarget = false;
+    }
+
+    private void RestoreInterruptedTarget()
+    {
+        currentTarget = interruptedTarget;
+        useCustomTarget = interruptedUseCustomTarget;
+        customTargetPosition = interruptedCustomTargetPosition;
     }
 
     private void UpdateFacing(Vector3 delta)
