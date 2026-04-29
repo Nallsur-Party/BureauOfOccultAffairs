@@ -40,6 +40,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Debug Ritual")]
     [SerializeField] private RitualManager ritualManager;
+    [SerializeField] private RitualGameTimer gameTimer;
 
     private Rigidbody rb;
     private PlayerProfile playerProfile;
@@ -67,6 +68,7 @@ public class PlayerController : MonoBehaviour
         npcSpawner = FindObjectOfType<NPCSpawner>();
         npcQueueManager = FindObjectOfType<NPCQueueManager>();
         ritualManager = FindObjectOfType<RitualManager>();
+        gameTimer = FindObjectOfType<RitualGameTimer>();
 
         if (ritualManager == null)
         {
@@ -254,7 +256,11 @@ public class PlayerController : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.P))
         {
-            SpawnNPC();
+            ToggleNpcAutoSpawn();
+        }
+        else if (Input.GetKeyDown(KeyCode.O))
+        {
+            ForceEndGameTimer();
         }
     }
 
@@ -267,6 +273,30 @@ public class PlayerController : MonoBehaviour
         else
         {
             Debug.LogWarning("NPCSpawner not found in scene!");
+        }
+    }
+
+    private void ToggleNpcAutoSpawn()
+    {
+        if (npcSpawner != null)
+        {
+            npcSpawner.ToggleAutoSpawn();
+        }
+        else
+        {
+            Debug.LogWarning("NPCSpawner not found in scene!");
+        }
+    }
+
+    private void ForceEndGameTimer()
+    {
+        if (gameTimer != null)
+        {
+            gameTimer.ForceEndGame();
+        }
+        else
+        {
+            Debug.LogWarning("RitualGameTimer not found in scene!");
         }
     }
 

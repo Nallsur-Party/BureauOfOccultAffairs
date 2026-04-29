@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class NPCSpawner : MonoBehaviour
@@ -11,9 +12,16 @@ public class NPCSpawner : MonoBehaviour
     [SerializeField] private Transform startPoint;
     [SerializeField] private Transform counterPoint;
     [SerializeField] private Transform[] exitPoints;
+    [SerializeField] private float autoSpawnInterval = 2f;
+    [SerializeField] private bool autoSpawnEnabledByDefault = true;
+
+    private Coroutine autoSpawnCoroutine;
+    private bool isAutoSpawnEnabled;
 
     private void Awake()
     {
+        isAutoSpawnEnabled = autoSpawnEnabledByDefault;
+
         if (npcGenerator == null)
         {
             npcGenerator = FindObjectOfType<NPCGenerator>();
@@ -37,45 +45,124 @@ public class NPCSpawner : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        if (isAutoSpawnEnabled)
+        {
+            StartAutoSpawn();
+        }
+    }
+
     public void SpawnNPC()
+    {
+        TrySpawnNPC();
+    }
+
+    public void StartAutoSpawn()
+    {
+        isAutoSpawnEnabled = true;
+
+        if (autoSpawnCoroutine != null)
+        {
+            return;
+        }
+
+        autoSpawnCoroutine = StartCoroutine(AutoSpawnRoutine());
+    }
+
+    public void StopAutoSpawn()
+    {
+        isAutoSpawnEnabled = false;
+
+        if (autoSpawnCoroutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(autoSpawnCoroutine);
+        autoSpawnCoroutine = null;
+    }
+
+    public void ToggleAutoSpawn()
+    {
+        if (isAutoSpawnEnabled)
+        {
+            StopAutoSpawn();
+            Debug.Log("NPC auto spawn disabled.", this);
+        }
+        else
+        {
+            StartAutoSpawn();
+            Debug.Log("NPC auto spawn enabled.", this);
+        }
+    }
+
+    private IEnumerator AutoSpawnRoutine()
+    {
+        while (isAutoSpawnEnabled)
+        {
+            if (npcQueueManager == null)
+            {
+                Debug.LogError("NPCQueueManager not found in scene!", this);
+                break;
+            }
+
+            if (npcQueueManager.HasFreeSlot)
+            {
+                TrySpawnNPC();
+            }
+
+            yield return new WaitForSeconds(autoSpawnInterval);
+        }
+
+        autoSpawnCoroutine = null;
+    }
+
+    private bool TrySpawnNPC()
     {
         if (npcPawnPrefab == null)
         {
             Debug.LogError("NPC Pawn Prefab is not assigned!", this);
-            return;
+            return false;
         }
 
         if (npcGenerator == null || !npcGenerator.IsCatalogLoaded)
         {
             Debug.LogError("NPCGenerator is not available or catalog not loaded!", this);
-            return;
+            return false;
         }
 
-        // Спавним prefab
+        if (npcQueueManager == null)
+        {
+            Debug.LogError("NPCQueueManager not found in scene!", this);
+            return false;
+        }
+
+        if (!npcQueueManager.HasFreeSlot)
+        {
+            Debug.Log("NPC spawn skipped because queue is full.", this);
+            return false;
+        }
+
         GameObject spawnedNpcObject = Instantiate(npcPawnPrefab, spawnParent);
-        
-        // Получаем компонент NpcOrderVisitor
+
         NpcOrderVisitor npcOrderVisitor = spawnedNpcObject.GetComponent<NpcOrderVisitor>();
         if (npcOrderVisitor == null)
         {
             Debug.LogError("Spawned NPC Pawn does not have NpcOrderVisitor component!", this);
             Destroy(spawnedNpcObject);
-            return;
+            return false;
         }
 
-        // Генерируем данные NPC используя существующий generator
         NPC generatedNpc = GenerateUniqueNPC();
 
         npcOrderVisitor.SetNpcData(generatedNpc);
         npcOrderVisitor.ConfigureRoute(startPoint, counterPoint, exitPoints, true);
 
-        // Регистрируем NPC в очереди
-        if (npcQueueManager != null)
-        {
-            npcQueueManager.EnqueueNPC(npcOrderVisitor);
-        }
+        npcQueueManager.EnqueueNPC(npcOrderVisitor);
 
         Debug.Log($"Spawned NPC: {generatedNpc?.Name}", spawnedNpcObject);
+        return true;
     }
 
     private NPC GenerateUniqueNPC()
@@ -85,7 +172,6 @@ public class NPCSpawner : MonoBehaviour
             return null;
         }
 
-        // Используем метод NPCGenerator для создания уникального NPC
         npcGenerator.GenerateNpc();
         return npcGenerator.GeneratedNpc;
     }
@@ -134,4 +220,3 @@ public class NPCSpawner : MonoBehaviour
         }
     }
 }
-

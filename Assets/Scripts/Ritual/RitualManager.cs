@@ -6,10 +6,13 @@ public class RitualManager : MonoBehaviour
     private const int DefaultRitualHealth = 3;
     private const int WrongStepDamage = 1;
 
+    [SerializeField] private int completedRitualPoints = 1;
     [SerializeField] private RitualSolutionCatalog ritualSolutionCatalog;
+    [SerializeField] private RitualPointsUI ritualPointsUI;
 
     private readonly Dictionary<NpcOrderVisitor, RitualProgressState> progressByNpc = new Dictionary<NpcOrderVisitor, RitualProgressState>();
     private RitualSolutionCatalog runtimeCatalog;
+    private RitualPointsUI runtimeRitualPointsUI;
 
     private sealed class RitualProgressState
     {
@@ -34,6 +37,29 @@ public class RitualManager : MonoBehaviour
 
             return runtimeCatalog;
         }
+    }
+
+    private RitualPointsUI ActivePointsUI
+    {
+        get
+        {
+            if (ritualPointsUI != null)
+            {
+                return ritualPointsUI;
+            }
+
+            if (runtimeRitualPointsUI == null)
+            {
+                runtimeRitualPointsUI = FindObjectOfType<RitualPointsUI>();
+            }
+
+            return runtimeRitualPointsUI;
+        }
+    }
+
+    private void Awake()
+    {
+        _ = ActivePointsUI;
     }
 
     public bool HasActiveRitual(NpcOrderVisitor npc)
@@ -146,6 +172,7 @@ public class RitualManager : MonoBehaviour
         {
             npc.NpcData.MarkCured();
             npc.ShowDialogue("Мне стало легче...");
+            AwardRitualPoints();
             ClearProgress(npc);
             LogAttempt(npc, RitualAttemptResult.Completed, item, action, FormatStep(expectedStep));
             npc.LeaveRandomExit();
@@ -213,5 +240,23 @@ public class RitualManager : MonoBehaviour
     private static string FormatStep(RitualStepDefinition step)
     {
         return step == null ? null : $"{step.Item} + {step.Action.GetDisplayName()}";
+    }
+
+    private void AwardRitualPoints()
+    {
+        if (completedRitualPoints <= 0)
+        {
+            return;
+        }
+
+        RitualPointsUI pointsUI = ActivePointsUI;
+        if (pointsUI == null)
+        {
+            Debug.Log($"Ritual Debug | Awarded {completedRitualPoints} points, but no RitualPointsUI was found.");
+            return;
+        }
+
+        pointsUI.AddPoints(completedRitualPoints);
+        Debug.Log($"Ritual Debug | Awarded {completedRitualPoints} points. Total: {pointsUI.CurrentPoints}");
     }
 }

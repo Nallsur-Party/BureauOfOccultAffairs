@@ -7,6 +7,19 @@ public class NPCQueueManager : MonoBehaviour
 
     private Queue<NpcOrderVisitor> npcQueue = new Queue<NpcOrderVisitor>();
 
+    public int QueueSize => npcQueue.Count;
+
+    public int QueueCapacity
+    {
+        get
+        {
+            int waitingSlots = queuePoints != null ? queuePoints.Length : 0;
+            return waitingSlots + 1;
+        }
+    }
+
+    public bool HasFreeSlot => QueueSize < QueueCapacity;
+
     public void EnqueueNPC(NpcOrderVisitor npc)
     {
         if (npc != null && !npcQueue.Contains(npc))
@@ -134,5 +147,4 @@ public class NPCQueueManager : MonoBehaviour
         return queuePoint.position;
     }
 
-    public int QueueSize => npcQueue.Count;
 }
