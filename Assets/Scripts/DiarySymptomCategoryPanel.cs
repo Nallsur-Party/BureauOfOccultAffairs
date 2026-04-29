@@ -519,6 +519,17 @@ public class DiarySymptomCategoryPanel : MonoBehaviour
         RefreshProblemCandidates();
     }
 
+    public void ClearObservedSymptoms()
+    {
+        if (observedSymptomsText == null)
+        {
+            return;
+        }
+
+        observedSymptomsText.text = string.Empty;
+        RefreshProblemCandidates();
+    }
+
     private void EnsureSymptomButtonCount(Transform entryRoot, List<TMP_Text> symptomLabels, int requiredCount)
     {
         if (entryRoot == null || symptomLabels == null || symptomLabels.Count == 0 || requiredCount <= symptomLabels.Count)
